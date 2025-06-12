@@ -1,4 +1,3 @@
-use color_eyre::owo_colors::OwoColorize;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
 use ratatui::{
@@ -14,7 +13,17 @@ use std::io;
 
 #[derive(Debug, Default)]
 pub struct App {
+    current_screen: Menu,
     exit: bool,
+}
+
+#[derive(Debug, Default)]
+enum Menu {
+    #[default]
+    Main,
+    Domains,
+    AlertActions,
+    HistoricalData,
 }
 
 impl App {
@@ -27,7 +36,11 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+        match self.current_screen {
+            Menu::Main => frame.render_widget(self, frame.area()),
+            Menu::Domains => frame.render_widget(Paragraph::new("Domain Page"), frame.area()),
+            _ => {}
+        }
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -43,6 +56,8 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
+            KeyCode::Esc => self.current_screen = Menu::Main,
+            KeyCode::Char('e') => self.current_screen = Menu::Domains,
             _ => {}
         }
     }
@@ -54,11 +69,6 @@ impl App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(area);
-
         let upquack_title = "
 ██╗   ██╗██████╗  ██████╗ ██╗   ██╗ █████╗  ██████╗██╗  ██╗
 ██║   ██║██╔══██╗██╔═══██╗██║   ██║██╔══██╗██╔════╝██║ ██╔╝
@@ -69,10 +79,16 @@ impl Widget for &App {
 ";
         let instructions = Line::from(vec![" Quit ".into(), "<Q> ".blue().bold()]);
 
-        Block::bordered()
+        let block = Block::bordered()
             .title_bottom(instructions.centered())
-            .border_set(border::THICK)
-            .render(area, buf);
+            .border_set(border::THICK);
+
+        let inner_area = block.inner(area);
+
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(inner_area);
 
         // Convert ASCII art to `Text`
         let banner_lines = upquack_title
@@ -84,15 +100,16 @@ impl Widget for &App {
         let text = Text::from(banner_lines);
 
         let menu_options = Text::from(vec![
-            Line::from("Manage Monitored URLS          E"),
-            Line::from("Configure Monitoring           S"),
-            Line::from("Define Alert Actions           M"),
+            Line::from("Monitored URLS                 E"),
+            Line::from("Alert Actions                  M"),
             Line::from("Historical Data                P"),
         ])
+        .style(Color::LightBlue)
         .centered();
 
         let header = Paragraph::new(text).centered();
 
+        block.render(area, buf);
         header.render(layout[0], buf);
         menu_options.render(layout[1], buf);
     }
