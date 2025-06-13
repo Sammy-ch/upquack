@@ -39,7 +39,10 @@ impl App {
         match self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
             Menu::Domains => frame.render_widget(Paragraph::new("Domain Page"), frame.area()),
-            _ => {}
+            Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
+            Menu::HistoricalData => {
+                frame.render_widget(Paragraph::new("HistoricalData"), frame.area())
+            }
         }
     }
 
@@ -58,6 +61,8 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Esc => self.current_screen = Menu::Main,
             KeyCode::Char('e') => self.current_screen = Menu::Domains,
+            KeyCode::Char('m') => self.current_screen = Menu::AlertActions,
+            KeyCode::Char('p') => self.current_screen = Menu::HistoricalData,
             _ => {}
         }
     }
@@ -85,7 +90,7 @@ impl Widget for &App {
 
         let inner_area = block.inner(area);
 
-        let layout = Layout::default()
+        let box_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(inner_area);
@@ -110,7 +115,7 @@ impl Widget for &App {
         let header = Paragraph::new(text).centered();
 
         block.render(area, buf);
-        header.render(layout[0], buf);
-        menu_options.render(layout[1], buf);
+        header.render(box_layout[0], buf);
+        menu_options.render(box_layout[1], buf);
     }
 }
