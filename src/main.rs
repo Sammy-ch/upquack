@@ -6,7 +6,8 @@ use std::io;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
-    let app_result = App::default().run(&mut terminal);
+    let mut app_init = App::new();
+    let run_upquack = app_init.run(&mut terminal);
     ratatui::restore();
-    app_result
+    run_upquack
 }

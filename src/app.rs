@@ -11,11 +11,12 @@ use ratatui::{
 };
 use std::io;
 
-use crate::ui::domains::DomainTable;
+use crate::ui::domains::DomainScreen;
 
 #[derive(Debug, Default)]
 pub struct App {
     current_screen: Menu,
+    domain_screen: DomainScreen,
     exit: bool,
 }
 
@@ -29,6 +30,13 @@ enum Menu {
 }
 
 impl App {
+    pub fn new() -> Self {
+        App {
+            current_screen: Menu::Main,
+            exit: false,
+            domain_screen: DomainScreen::init(),
+        }
+    }
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -40,7 +48,7 @@ impl App {
     fn draw(&self, frame: &mut Frame) {
         match self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
-            Menu::Domains => frame.render_widget(&DomainTable::init(), frame.area()),
+            Menu::Domains => frame.render_widget(&self.domain_screen, frame.area()),
             Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
             Menu::HistoricalData => {
                 frame.render_widget(Paragraph::new("HistoricalData"), frame.area())
@@ -51,14 +59,24 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event);
+                match self.current_screen {
+                    Menu::Main => self.handle_global_key_event(key_event),
+                    Menu::Domains => {
+                        self.domain_screen.handle_key_event(key_event);
+
+                        if !self.domain_screen.handle_key_event(key_event) {
+                            self.handle_global_key_event(key_event);
+                        }
+                    }
+                    _ => {}
+                }
             }
             _ => {}
         };
         Ok(())
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_global_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Esc => self.current_screen = Menu::Main,
