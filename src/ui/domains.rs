@@ -1,15 +1,19 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
 use ratatui::{
-    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
-    style::Stylize,
-    symbols::border,
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
-use std::io;
 
 #[derive(Debug)]
-pub struct Domains {}
+pub struct DomainList;
+
+impl Widget for &DomainList {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let header = Line::from("URL Monitoring").left_aligned();
+
+        Block::bordered().title_top(header).render(area, buf);
+    }
+}

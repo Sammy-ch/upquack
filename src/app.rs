@@ -1,3 +1,4 @@
+// use crate::ui::domains;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
 use ratatui::{
@@ -10,6 +11,8 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 use std::io;
+
+use crate::ui::domains::DomainList;
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -38,7 +41,7 @@ impl App {
     fn draw(&self, frame: &mut Frame) {
         match self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
-            Menu::Domains => frame.render_widget(Paragraph::new("Domain Page"), frame.area()),
+            Menu::Domains => frame.render_widget(&DomainList, frame.area()),
             Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
             Menu::HistoricalData => {
                 frame.render_widget(Paragraph::new("HistoricalData"), frame.area())
