@@ -115,7 +115,6 @@ impl Widget for &App {
             .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(inner_area);
 
-        // Convert ASCII art to `Text`
         let banner_lines = upquack_title
             .trim_matches('\n')
             .lines()
