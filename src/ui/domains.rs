@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::ui::popup;
+use crate::ui::popup::{self, Popup};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
 use ratatui::widgets::{ScrollbarState, TableState};
@@ -52,6 +52,7 @@ struct TableColors {
 pub struct DomainScreen {
     state: TableState,
     items: Vec<u8>,
+    show_popup: bool,
     // scroll_state: ScrollbarState,
     // colors: TableColors,
     // color_index: usize,
@@ -61,14 +62,26 @@ impl DomainScreen {
     pub fn init() -> Self {
         DomainScreen {
             state: TableState::new(),
+            show_popup: false,
             items: vec![1, 2, 3],
         }
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
         match key_event.code {
-            KeyCode::Char('A') => true,
+            KeyCode::Char('A') => {
+                if !self.show_popup {
+                    self.show_popup = true
+                };
+                true
+            }
             KeyCode::Char('R') => true,
+            KeyCode::Esc => {
+                if self.show_popup {
+                    self.show_popup = false
+                }
+                true
+            }
             _ => false,
         }
     }
@@ -77,7 +90,6 @@ impl DomainScreen {
 impl Widget for &DomainScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let instructions = Line::from(vec![
-            "Esc: Return to Menu ".into(),
             "A: Add ".into(),
             "D: Delete ".into(),
             "R: Refresh ".into(),
@@ -89,5 +101,15 @@ impl Widget for &DomainScreen {
             .title_top(header)
             .title_bottom(instructions.centered())
             .render(area, buf);
+
+        if self.show_popup {
+            let popup_block = Block::bordered().title("Add New Domain");
+            let popup_area = Popup::centered_rect(60, 20, area);
+
+            // Placeholder for popup content
+            let popup_content = Paragraph::new("Enter URL: \n\n (Press Esc to close)");
+            popup_content.render(popup_area, buf);
+            popup_block.render(popup_area, buf);
+        }
     }
 }
