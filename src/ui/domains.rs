@@ -1,7 +1,7 @@
-use crate::ui::popup::Popup; // Assuming your Popup struct is in ui/popup.rs
+use crate::ui::popup::Popup;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::*;
-use ratatui::widgets::{Clear, ScrollbarState, TableState}; // Added Clear for popup background
+use ratatui::widgets::{Clear, ScrollbarState, TableState};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -10,8 +10,7 @@ use ratatui::{
 };
 use tui_textarea::{Input, Key};
 
-// --- Data Structures ---
-#[derive(Debug, Clone)] // Added Clone trait for easier data manipulation
+#[derive(Debug, Clone)]
 struct Data {
     url: String,
     status: DomainStatus,
@@ -48,18 +47,17 @@ struct TableColors {
     footer_border_color: Color,
 }
 
-// --- DomainScreen (previously DomainTable) ---
-#[derive(Debug, Default)] // Removed `Default` because we manually initialize the popup field
+#[derive(Debug, Default)]
 pub struct DomainScreen {
     state: TableState,
-    items: Vec<Data>, // Changed from Vec<u8> to Vec<Data>
+    items: Vec<Data>,
     show_popup: bool,
-    add_domain_popup: Option<Popup<'static>>, // Holds the Popup instance
+    add_domain_popup: Option<Popup<'static>>,
 }
 
 impl DomainScreen {
     pub fn init() -> Self {
-        let mut screen = DomainScreen {
+        DomainScreen {
             state: TableState::new(),
             show_popup: false,
             add_domain_popup: None, // No popup initially
@@ -90,13 +88,9 @@ impl DomainScreen {
                     interval: "120s".to_string(),
                 },
             ],
-        };
-        screen.state.select(Some(0)); // Select the first item by default
-        screen
+        }
     }
 
-    /// Handles incoming keyboard events.
-    /// Returns `true` if the event was consumed, `false` otherwise.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
         if self.show_popup {
             // If the popup is active, delegate key events to it
@@ -105,17 +99,16 @@ impl DomainScreen {
                 match key_event.code {
                     KeyCode::Esc => {
                         self.show_popup = false;
-                        self.add_domain_popup = None; // Clean up the popup instance
-                        return true; // Event consumed
+                        self.add_domain_popup = None;
+                        return true;
                     }
                     KeyCode::Enter => {
-                        let input_url = popup.get_input_text().join("\n"); // Get all lines as a single string
-                        if !input_url.trim().is_empty() {
-                            self.add_new_domain(input_url);
-                        }
+                        let input_url = popup.get_input_text().join("\n");
+                        if !input_url.trim().is_empty() {}
                         self.show_popup = false;
-                        self.add_domain_popup = None; // Clean up the popup instance
-                        return true; // Event consumed
+                        self.add_domain_popup = None;
+
+                        return true;
                     }
                     _ => {
                         // For other keys, convert to tui_textarea::Input and pass it
@@ -208,110 +201,25 @@ impl DomainScreen {
                     self.show_popup = true;
                     // Initialize the popup when opening it, potentially pre-filling
                     self.add_domain_popup = Some(Popup::new(
-                        Line::from("Add New Domain").into(),
+                        Line::from("Add New Domain"),
                         Some("https://".to_string()), // Pre-fill with HTTPS
                     ));
-                    true // Event consumed: opened popup
-                }
-                KeyCode::Char('D') | KeyCode::Char('d') => {
-                    self.delete_selected_domain();
                     true
                 }
-                KeyCode::Char('R') | KeyCode::Char('r') => {
-                    self.refresh_domains();
-                    true
-                }
-                KeyCode::Up => {
-                    self.previous_item();
-                    true
-                }
-                KeyCode::Down => {
-                    self.next_item();
-                    true
-                }
+                KeyCode::Char('D') | KeyCode::Char('d') => true,
+                KeyCode::Char('R') | KeyCode::Char('r') => true,
+                KeyCode::Up => true,
+                KeyCode::Down => true,
                 _ => false, // Event not consumed by DomainScreen
             }
         }
     }
-
-    fn add_new_domain(&mut self, url: String) {
-        let new_domain = Data {
-            url,
-            status: DomainStatus::UP, // Default for new domain
-            last_check: "N/A".to_string(),
-            response_time: "N/A".to_string(),
-            http_code: HttpCode::OK,
-            interval: "60s".to_string(), // You could expand the popup to ask for this
-        };
-        self.items.push(new_domain);
-        self.state.select(Some(self.items.len() - 1)); // Select the newly added item
-    }
-
-    fn delete_selected_domain(&mut self) {
-        if let Some(selected_index) = self.state.selected() {
-            if selected_index < self.items.len() {
-                self.items.remove(selected_index);
-                // Adjust selection after removal
-                if self.items.is_empty() {
-                    self.state.select(None);
-                } else if selected_index >= self.items.len() {
-                    self.state.select(Some(self.items.len() - 1));
-                } else {
-                    self.state.select(Some(selected_index));
-                }
-            }
-        }
-    }
-
-    fn refresh_domains(&mut self) {
-        // Placeholder for actual refresh logic.
-        // For demonstration, add a dummy entry.
-        let new_url = format!("https://refreshed-{}.com", self.items.len());
-        self.items.push(Data {
-            url: new_url,
-            status: DomainStatus::UP,
-            last_check: "Just now".to_string(),
-            response_time: "30ms".to_string(),
-            http_code: HttpCode::OK,
-            interval: "60s".to_string(),
-        });
-        self.state.select(Some(self.items.len() - 1)); // Select the new item
-    }
-
-    fn next_item(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    fn previous_item(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
 }
 
-// --- Widget Implementation for DomainScreen ---
 impl Widget for &DomainScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let instructions = Line::from(vec![
-            "Esc: Return to Menu ".into(), // Assuming app handles Esc to go to main menu
+            "Esc: Return to Menu ".into(),
             "A: Add ".into(),
             "D: Delete ".into(),
             "R: Refresh ".into(),
@@ -324,18 +232,13 @@ impl Widget for &DomainScreen {
             .title_top(header)
             .title_bottom(instructions.centered());
 
-        main_block.render(area, buf); // Render the main border and title/footer
+        main_block.render(area, buf);
 
-        // --- Render the popup if it's active ---
         if self.show_popup {
             if let Some(popup) = &self.add_domain_popup {
-                // Calculate the popup's area
-                let popup_area = Popup::centered_rect(60, 20, area); // 60% width, 20% height of parent area
-
-                // Render the popup widget
+                let popup_area = Popup::centered_rect(60, 20, area);
                 popup.clone().render(popup_area, buf);
             }
         }
     }
 }
-
