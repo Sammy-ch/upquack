@@ -8,10 +8,11 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
+use serde::{Deserialize, Serialize};
 use tui_textarea::{Input, Key};
 
-#[derive(Debug, Clone)]
-struct Data {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MonitoredDomain {
     url: String,
     status: DomainStatus,
     last_check: String,
@@ -20,14 +21,15 @@ struct Data {
     interval: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum DomainStatus {
     UP,
     DOWN,
-    WARNING,
+    UNKNOWN,
+    Error(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum HttpCode {
     OK = 200,
     ERR = 500,
@@ -50,7 +52,7 @@ struct TableColors {
 #[derive(Debug, Default)]
 pub struct DomainScreen {
     state: TableState,
-    items: Vec<Data>,
+    domains: Vec<MonitoredDomain>,
     show_popup: bool,
     add_domain_popup: Option<Popup<'static>>,
 }
@@ -61,9 +63,9 @@ impl DomainScreen {
             state: TableState::new(),
             show_popup: false,
             add_domain_popup: None, // No popup initially
-            items: vec![
+            domains: vec![
                 // Dummy data
-                Data {
+                MonitoredDomain {
                     url: "https://google.com".to_string(),
                     status: DomainStatus::UP,
                     last_check: "2025-06-18 10:00".to_string(),
@@ -71,7 +73,7 @@ impl DomainScreen {
                     http_code: HttpCode::OK,
                     interval: "60s".to_string(),
                 },
-                Data {
+                MonitoredDomain {
                     url: "https://example.com/broken".to_string(),
                     status: DomainStatus::DOWN,
                     last_check: "2025-06-18 10:01".to_string(),
@@ -79,9 +81,9 @@ impl DomainScreen {
                     http_code: HttpCode::ERR,
                     interval: "30s".to_string(),
                 },
-                Data {
+                MonitoredDomain {
                     url: "https://warning.net".to_string(),
-                    status: DomainStatus::WARNING,
+                    status: DomainStatus::UNKNOWN,
                     last_check: "2025-06-18 10:02".to_string(),
                     response_time: "1200ms".to_string(),
                     http_code: HttpCode::OK,
