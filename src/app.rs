@@ -16,7 +16,6 @@ use crate::ui::domains::DomainScreen;
 #[derive(Debug, Default)]
 pub struct App {
     current_screen: Menu,
-    domain_screen: DomainScreen,
     exit: bool,
 }
 
@@ -24,7 +23,7 @@ pub struct App {
 enum Menu {
     #[default]
     Main,
-    Domains,
+    Domains(DomainScreen),
     AlertActions,
     HistoricalData,
 }
@@ -34,7 +33,6 @@ impl App {
         App {
             current_screen: Menu::Main,
             exit: false,
-            domain_screen: DomainScreen::init(),
         }
     }
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
@@ -46,9 +44,9 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        match self.current_screen {
+        match &self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
-            Menu::Domains => frame.render_widget(&self.domain_screen, frame.area()),
+            Menu::Domains(domain_screen) => frame.render_widget(domain_screen, frame.area()),
             Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
             Menu::HistoricalData => {
                 frame.render_widget(Paragraph::new("HistoricalData"), frame.area())
@@ -59,16 +57,14 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                match self.current_screen {
+                let consumed = match &mut self.current_screen {
                     Menu::Main => self.handle_global_key_event(key_event),
-                    Menu::Domains => {
-                        self.domain_screen.handle_key_event(key_event);
+                    Menu::Domains(domain_screen) => domain_screen.handle_key_event(key_event),
+                    _ => false,
+                };
 
-                        if !self.domain_screen.handle_key_event(key_event) {
-                            self.handle_global_key_event(key_event);
-                        }
-                    }
-                    _ => {}
+                if !consumed {
+                    self.handle_global_key_event(key_event);
                 }
             }
             _ => {}
@@ -76,14 +72,29 @@ impl App {
         Ok(())
     }
 
-    fn handle_global_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_global_key_event(&mut self, key_event: KeyEvent) -> bool {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
-            KeyCode::Esc => self.current_screen = Menu::Main,
-            KeyCode::Char('e') => self.current_screen = Menu::Domains,
-            KeyCode::Char('m') => self.current_screen = Menu::AlertActions,
-            KeyCode::Char('p') => self.current_screen = Menu::HistoricalData,
-            _ => {}
+            KeyCode::Char('q') => {
+                self.exit();
+                true
+            }
+            KeyCode::Esc => {
+                self.current_screen = Menu::Main;
+                true
+            }
+            KeyCode::Char('e') => {
+                self.current_screen = Menu::Domains(DomainScreen::init());
+                true
+            }
+            KeyCode::Char('m') => {
+                self.current_screen = Menu::AlertActions;
+                true
+            }
+            KeyCode::Char('p') => {
+                self.current_screen = Menu::HistoricalData;
+                true
+            }
+            _ => false,
         }
     }
 

@@ -49,20 +49,24 @@ struct TableColors {
     footer_border_color: Color,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
+enum DomainScreenMode {
+    Table,
+    AddDomain(Popup<'static>),
+}
+
+#[derive(Debug)]
 pub struct DomainScreen {
     state: TableState,
     domains: Vec<MonitoredDomain>,
-    show_popup: bool,
-    add_domain_popup: Option<Popup<'static>>,
+    mode: DomainScreenMode,
 }
 
 impl DomainScreen {
     pub fn init() -> Self {
         DomainScreen {
             state: TableState::new(),
-            show_popup: false,
-            add_domain_popup: None, // No popup initially
+            mode: DomainScreenMode::Table,
             domains: vec![
                 // Dummy data
                 MonitoredDomain {
@@ -92,28 +96,22 @@ impl DomainScreen {
             ],
         }
     }
-
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
-        if self.show_popup {
-            // If the popup is active, delegate key events to it
-            if let Some(popup) = &mut self.add_domain_popup {
-                // First, handle keys that should close or submit the popup
+        match &mut self.mode {
+            DomainScreenMode::AddDomain(popup) => {
+                // If the popup is active, delegate key events to it
                 match key_event.code {
                     KeyCode::Esc => {
-                        self.show_popup = false;
-                        self.add_domain_popup = None;
-                        return true;
+                        self.mode = DomainScreenMode::Table; // Switch back to Table mode
+                        true // Event consumed by popup to close
                     }
                     KeyCode::Enter => {
                         let input_url = popup.get_input_text().join("\n");
-                        if !input_url.trim().is_empty() {}
-                        self.show_popup = false;
-                        self.add_domain_popup = None;
-
-                        return true;
+                        // TODO: Add logic to process input_url and add to domains
+                        self.mode = DomainScreenMode::Table; // Switch back to Table mode
+                        true // Event consumed by popup to submit
                     }
                     _ => {
-                        // For other keys, convert to tui_textarea::Input and pass it
                         let tui_input = match key_event.code {
                             KeyCode::Char(c) => Input {
                                 key: Key::Char(c),
@@ -190,29 +188,42 @@ impl DomainScreen {
                             _ => return false, // If tui-textarea doesn't support it, don't consume
                         };
                         popup.textarea_mut().input(tui_input);
-                        return true; // Event consumed by textarea
+                        true // Event consumed by textarea
                     }
                 }
             }
-            // This path should ideally not be reached if show_popup is true and add_domain_popup is None
-            false
-        } else {
-            // Handle keys for the main table view
-            match key_event.code {
-                KeyCode::Char('A') | KeyCode::Char('a') => {
-                    self.show_popup = true;
-                    // Initialize the popup when opening it, potentially pre-filling
-                    self.add_domain_popup = Some(Popup::new(
-                        Line::from("Add New Domain"),
-                        Some("https://".to_string()), // Pre-fill with HTTPS
-                    ));
-                    true
+            DomainScreenMode::Table => {
+                // Handle keys for the main table view
+                match key_event.code {
+                    KeyCode::Char('A') | KeyCode::Char('a') => {
+                        // Switch to AddDomain mode and create the popup
+                        self.mode = DomainScreenMode::AddDomain(Popup::new(
+                            Line::from("Add New Domain"),
+                            Some("https://".to_string()),
+                        ));
+                        true // Event consumed
+                    }
+                    KeyCode::Char('D') | KeyCode::Char('d') => {
+                        // TODO: Implement delete logic
+                        true // Event consumed
+                    }
+                    KeyCode::Char('R') | KeyCode::Char('r') => {
+                        // TODO: Implement refresh logic
+                        true // Event consumed
+                    }
+                    KeyCode::Up => {
+                        // TODO: Implement table navigation
+                        true // Event consumed
+                    }
+                    KeyCode::Down => {
+                        // TODO: Implement table navigation
+                        //
+                        true // Event consumed
+                    }
+                    // return false so the parent `App` can potentially handle it.
+                    KeyCode::Esc => false, // Let App handle global Esc
+                    _ => false,            // Event not consumed by DomainScreen (in Table mode)
                 }
-                KeyCode::Char('D') | KeyCode::Char('d') => true,
-                KeyCode::Char('R') | KeyCode::Char('r') => true,
-                KeyCode::Up => true,
-                KeyCode::Down => true,
-                _ => false, // Event not consumed by DomainScreen
             }
         }
     }
@@ -236,11 +247,11 @@ impl Widget for &DomainScreen {
 
         main_block.render(area, buf);
 
-        if self.show_popup {
-            if let Some(popup) = &self.add_domain_popup {
-                let popup_area = Popup::centered_rect(60, 20, area);
-                popup.clone().render(popup_area, buf);
-            }
+        if let DomainScreenMode::AddDomain(popup) = &self.mode {
+            let popup_area = Popup::centered_rect(60, 20, area);
+            Clear.render(popup_area, buf);
+            popup.clone().render(popup_area, buf);
         }
+        // Render the actual table domain table when in table mode
     }
 }
