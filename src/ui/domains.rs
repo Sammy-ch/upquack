@@ -1,3 +1,6 @@
+use std::{fs, io};
+
+use crate::ui::domains;
 use crate::ui::popup::Popup;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::*;
@@ -10,15 +13,17 @@ use ratatui::{
 };
 use serde::{Deserialize, Serialize};
 use tui_textarea::{Input, Key};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct MonitoredDomain {
+pub struct MonitoredDomain {
+    id: Uuid,
     url: String,
-    status: DomainStatus,
-    last_check: String,
-    response_time: String,
-    http_code: HttpCode,
-    interval: String,
+    status: Option<DomainStatus>,
+    last_check: Option<String>,
+    response_time: Option<String>,
+    http_code: Option<HttpCode>,
+    interval: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +54,7 @@ struct TableColors {
     footer_border_color: Color,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum DomainScreenMode {
     Table,
@@ -64,38 +70,32 @@ pub struct DomainScreen {
 
 impl DomainScreen {
     pub fn init() -> Self {
+        let domains = match Self::load_domains("db/domains.json") {
+            Ok(loaded_domains) => loaded_domains,
+            Err(e) => {
+                eprintln!("Could not load domains: {}", e);
+                Vec::new()
+            }
+        };
         DomainScreen {
             state: TableState::new(),
             mode: DomainScreenMode::Table,
-            domains: vec![
-                // Dummy data
-                MonitoredDomain {
-                    url: "https://google.com".to_string(),
-                    status: DomainStatus::UP,
-                    last_check: "2025-06-18 10:00".to_string(),
-                    response_time: "50ms".to_string(),
-                    http_code: HttpCode::OK,
-                    interval: "60s".to_string(),
-                },
-                MonitoredDomain {
-                    url: "https://example.com/broken".to_string(),
-                    status: DomainStatus::DOWN,
-                    last_check: "2025-06-18 10:01".to_string(),
-                    response_time: "Timeout".to_string(),
-                    http_code: HttpCode::ERR,
-                    interval: "30s".to_string(),
-                },
-                MonitoredDomain {
-                    url: "https://warning.net".to_string(),
-                    status: DomainStatus::UNKNOWN,
-                    last_check: "2025-06-18 10:02".to_string(),
-                    response_time: "1200ms".to_string(),
-                    http_code: HttpCode::OK,
-                    interval: "120s".to_string(),
-                },
-            ],
+            domains,
         }
     }
+
+    pub fn save_domains(domains: &[MonitoredDomain], file_path: &str) -> io::Result<()> {
+        let domain_data = serde_json::to_string_pretty(domains)?;
+        fs::write(file_path, domain_data)?;
+        Ok(())
+    }
+
+    pub fn load_domains(file_path: &str) -> io::Result<Vec<MonitoredDomain>> {
+        let domain_data = fs::read_to_string(file_path)?;
+        let domains: Vec<MonitoredDomain> = serde_json::from_str(&domain_data)?;
+        Ok(domains)
+    }
+
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
         match &mut self.mode {
             DomainScreenMode::AddDomain(popup) => {
@@ -107,7 +107,22 @@ impl DomainScreen {
                     }
                     KeyCode::Enter => {
                         let input_url = popup.get_input_text().join("\n");
-                        // TODO: Add logic to process input_url and add to domains
+                        if !input_url.trim().is_empty() {
+                            let new_domain = MonitoredDomain {
+                                id: Uuid::new_v4(),
+                                url: input_url.trim().to_string(),
+                                status: None,
+                                http_code: None,
+                                interval: None,
+                                last_check: None,
+                                response_time: None,
+                            };
+
+                            self.domains.push(new_domain);
+                            if let Err(e) = Self::save_domains(&self.domains, "db/domains.json") {
+                                eprintln!("Error saving domains: {}", e);
+                            }
+                        }
                         self.mode = DomainScreenMode::Table; // Switch back to Table mode
                         true // Event consumed by popup to submit
                     }
@@ -217,6 +232,7 @@ impl DomainScreen {
                     }
                     KeyCode::Down => {
                         // TODO: Implement table navigation
+                        //
                         //
                         true // Event consumed
                     }

@@ -19,6 +19,7 @@ pub struct App {
     exit: bool,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Default)]
 enum Menu {
     #[default]

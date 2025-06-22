@@ -1,0 +1,47 @@
+[
+  {
+    "id": "7f95f8f9-37c0-4260-983b-4ede8ad6c8e4",
+    "url": "https://google.com",
+    "status": null,
+    "last_check": null,
+    "response_time": null,
+    "http_code": null,
+    "interval": null
+  },
+  {
+    "id": "7efc92ce-ece1-4016-8dbb-ec96428fd030",
+    "url": "https://facebook.com",
+    "status": null,
+    "last_check": null,
+    "response_time": null,
+    "http_code": null,
+    "interval": null
+  },
+  {
+    "id": "91502b3b-88dd-409f-a383-30ce8c9eb922",
+    "url": "https://google.com",
+    "status": null,
+    "last_check": null,
+    "response_time": null,
+    "http_code": null,
+    "interval": null
+  },
+  {
+    "id": "fdaf0306-1c16-480d-953d-a2e0000725bd",
+    "url": "https://sammy.com",
+    "status": null,
+    "last_check": null,
+    "response_time": null,
+    "http_code": null,
+    "interval": null
+  },
+  {
+    "id": "289618a1-079a-407e-911e-7e0fb8d08be5",
+    "url": "https://myosgard.com",
+    "status": null,
+    "last_check": null,
+    "response_time": null,
+    "http_code": null,
+    "interval": null
+  }
+]
