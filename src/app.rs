@@ -44,8 +44,8 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        match &self.current_screen {
+    fn draw(&mut self, frame: &mut Frame) {
+        match &mut self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
             Menu::Domains(domain_screen) => frame.render_widget(domain_screen, frame.area()),
             Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
@@ -104,7 +104,7 @@ impl App {
     }
 }
 
-impl Widget for &App {
+impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let upquack_title = "
 ██╗   ██╗██████╗  ██████╗ ██╗   ██╗ █████╗  ██████╗██╗  ██╗

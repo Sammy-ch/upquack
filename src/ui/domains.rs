@@ -1,15 +1,15 @@
 use std::{fs, io};
 
-use crate::ui::domains;
+use crate::ui::domain_table::{DomainTable, DomainTableState};
 use crate::ui::popup::Popup;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::*;
-use ratatui::widgets::{Clear, ScrollbarState, TableState};
+use ratatui::widgets::Clear;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
+    text::Line,
+    widgets::{Block, Widget},
 };
 use serde::{Deserialize, Serialize};
 use tui_textarea::{Input, Key};
@@ -17,17 +17,17 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitoredDomain {
-    id: Uuid,
-    url: String,
-    status: Option<DomainStatus>,
-    last_check: Option<String>,
-    response_time: Option<String>,
-    http_code: Option<HttpCode>,
-    interval: Option<String>,
+    pub id: Uuid,
+    pub url: String,
+    pub status: Option<DomainStatus>,
+    pub last_check: Option<String>,
+    pub response_time: Option<String>,
+    pub http_code: Option<HttpCode>,
+    pub interval: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-enum DomainStatus {
+pub enum DomainStatus {
     UP,
     DOWN,
     UNKNOWN,
@@ -35,23 +35,9 @@ enum DomainStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-enum HttpCode {
-    OK = 200,
-    ERR = 500,
-}
-
-#[derive(Debug)]
-struct TableColors {
-    buffer_bg: Color,
-    header_bg: Color,
-    header_fg: Color,
-    row_fg: Color,
-    selected_row_style_fg: Color,
-    selected_column_style_fg: Color,
-    selected_cell_style_fg: Color,
-    normal_row_color: Color,
-    alt_row_color: Color,
-    footer_border_color: Color,
+pub enum HttpCode {
+    OK,
+    ERR,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -63,7 +49,7 @@ enum DomainScreenMode {
 
 #[derive(Debug)]
 pub struct DomainScreen {
-    state: TableState,
+    pub table_state: DomainTableState,
     domains: Vec<MonitoredDomain>,
     mode: DomainScreenMode,
 }
@@ -78,7 +64,7 @@ impl DomainScreen {
             }
         };
         DomainScreen {
-            state: TableState::new(),
+            table_state: DomainTableState::default(),
             mode: DomainScreenMode::Table,
             domains,
         }
@@ -245,7 +231,7 @@ impl DomainScreen {
     }
 }
 
-impl Widget for &DomainScreen {
+impl Widget for &mut DomainScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let instructions = Line::from(vec![
             "Esc: Return to Menu ".into(),
@@ -261,13 +247,18 @@ impl Widget for &DomainScreen {
             .title_top(header)
             .title_bottom(instructions.centered());
 
+        let inner_area = main_block.inner(area);
+
+        let domain_table_widget = DomainTable::new(&self.domains);
+
         main_block.render(area, buf);
+
+        domain_table_widget.render(inner_area, buf, &mut self.table_state);
 
         if let DomainScreenMode::AddDomain(popup) = &self.mode {
             let popup_area = Popup::centered_rect(60, 20, area);
             Clear.render(popup_area, buf);
             popup.clone().render(popup_area, buf);
         }
-        // Render the actual table domain table when in table mode
     }
 }
