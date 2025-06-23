@@ -37,6 +37,7 @@ impl<'a> StatefulWidget for DomainTable<'a> {
         ]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().bold()));
+
         let header = Row::new(header_cells)
             .height(1)
             .bottom_margin(1)
@@ -99,6 +100,7 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                 Constraint::Length(8),      // For Interval
             ],
         )
+        .column_spacing(2)
         .header(header)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED))
         .highlight_symbol(">> ");

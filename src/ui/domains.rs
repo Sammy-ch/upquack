@@ -49,7 +49,7 @@ enum DomainScreenMode {
 
 #[derive(Debug)]
 pub struct DomainScreen {
-    pub table_state: DomainTableState,
+    pub state: DomainTableState,
     domains: Vec<MonitoredDomain>,
     mode: DomainScreenMode,
 }
@@ -64,22 +64,52 @@ impl DomainScreen {
             }
         };
         DomainScreen {
-            table_state: DomainTableState::default(),
+            state: DomainTableState::default(),
             mode: DomainScreenMode::Table,
             domains,
         }
     }
 
-    pub fn save_domains(domains: &[MonitoredDomain], file_path: &str) -> io::Result<()> {
+    fn save_domains(domains: &[MonitoredDomain], file_path: &str) -> io::Result<()> {
         let domain_data = serde_json::to_string_pretty(domains)?;
         fs::write(file_path, domain_data)?;
         Ok(())
     }
 
-    pub fn load_domains(file_path: &str) -> io::Result<Vec<MonitoredDomain>> {
+    fn load_domains(file_path: &str) -> io::Result<Vec<MonitoredDomain>> {
         let domain_data = fs::read_to_string(file_path)?;
         let domains: Vec<MonitoredDomain> = serde_json::from_str(&domain_data)?;
         Ok(domains)
+    }
+
+    fn next_row(&mut self) {
+        let i = match self.state.table_state.selected() {
+            Some(i) => {
+                if i >= self.domains.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+
+        self.state.table_state.select(Some(i));
+    }
+
+    fn previous_row(&mut self) {
+        let i = match self.state.table_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.domains.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+
+        self.state.table_state.select(Some(i));
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
@@ -144,48 +174,13 @@ impl DomainScreen {
                                 alt: false,
                                 shift: false,
                             },
-                            KeyCode::Up => Input {
-                                key: Key::Up,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::Down => Input {
-                                key: Key::Down,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
                             KeyCode::Tab => Input {
                                 key: Key::Tab,
                                 ctrl: false,
                                 alt: false,
                                 shift: false,
                             },
-                            KeyCode::Home => Input {
-                                key: Key::Home,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::End => Input {
-                                key: Key::End,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::PageUp => Input {
-                                key: Key::PageUp,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::PageDown => Input {
-                                key: Key::PageDown,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
+
                             _ => return false, // If tui-textarea doesn't support it, don't consume
                         };
                         popup.textarea_mut().input(tui_input);
@@ -197,12 +192,11 @@ impl DomainScreen {
                 // Handle keys for the main table view
                 match key_event.code {
                     KeyCode::Char('A') | KeyCode::Char('a') => {
-                        // Switch to AddDomain mode and create the popup
                         self.mode = DomainScreenMode::AddDomain(Popup::new(
                             Line::from("Add New Domain"),
                             Some("https://".to_string()),
                         ));
-                        true // Event consumed
+                        true
                     }
                     KeyCode::Char('D') | KeyCode::Char('d') => {
                         // TODO: Implement delete logic
@@ -212,15 +206,13 @@ impl DomainScreen {
                         // TODO: Implement refresh logic
                         true // Event consumed
                     }
-                    KeyCode::Up => {
-                        // TODO: Implement table navigation
-                        true // Event consumed
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        self.previous_row();
+                        true
                     }
-                    KeyCode::Down => {
-                        // TODO: Implement table navigation
-                        //
-                        //
-                        true // Event consumed
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        self.next_row();
+                        true
                     }
                     // return false so the parent `App` can potentially handle it.
                     KeyCode::Esc => false, // Let App handle global Esc
@@ -253,7 +245,7 @@ impl Widget for &mut DomainScreen {
 
         main_block.render(area, buf);
 
-        domain_table_widget.render(inner_area, buf, &mut self.table_state);
+        domain_table_widget.render(inner_area, buf, &mut self.state);
 
         if let DomainScreenMode::AddDomain(popup) = &self.mode {
             let popup_area = Popup::centered_rect(60, 20, area);
