@@ -1,7 +1,9 @@
 use std::{fs, io};
 
 use crate::ui::domain_table::{DomainTable, DomainTableState};
+
 use crate::ui::popup::Popup;
+use crate::utils::is_valid_url;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::*;
 use ratatui::widgets::Clear;
@@ -14,6 +16,8 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 use tui_textarea::{Input, Key};
 use uuid::Uuid;
+
+static FILE_PATH: &str = "db/domains.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitoredDomain {
@@ -56,7 +60,7 @@ pub struct DomainScreen {
 
 impl DomainScreen {
     pub fn init() -> Self {
-        let domains = match Self::load_domains("db/domains.json") {
+        let domains = match Self::load_domains(FILE_PATH) {
             Ok(loaded_domains) => loaded_domains,
             Err(e) => {
                 eprintln!("Could not load domains: {}", e);
@@ -72,6 +76,7 @@ impl DomainScreen {
 
     fn save_domains(domains: &[MonitoredDomain], file_path: &str) -> io::Result<()> {
         let domain_data = serde_json::to_string_pretty(domains)?;
+
         fs::write(file_path, domain_data)?;
         Ok(())
     }
@@ -80,6 +85,27 @@ impl DomainScreen {
         let domain_data = fs::read_to_string(file_path)?;
         let domains: Vec<MonitoredDomain> = serde_json::from_str(&domain_data)?;
         Ok(domains)
+    }
+
+    fn delete_entry(&mut self) {
+        if let Some(selected_index) = self.state.table_state.selected() {
+            if selected_index < self.domains.len() {
+                let entry_id = self.domains[selected_index].id;
+                self.domains.retain(|domain| domain.id != entry_id);
+
+                if self.domains.is_empty() {
+                    self.state.table_state.select(None);
+                } else if selected_index >= self.domains.len() {
+                    self.state.table_state.select(Some(self.domains.len() - 1))
+                } else {
+                    self.state.table_state.select(Some(selected_index));
+                }
+
+                if let Err(e) = Self::save_domains(&self.domains, FILE_PATH) {
+                    eprintln!("Error updating domains after deletion: {}", e);
+                }
+            }
+        }
     }
 
     fn next_row(&mut self) {
@@ -115,32 +141,38 @@ impl DomainScreen {
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
         match &mut self.mode {
             DomainScreenMode::AddDomain(popup) => {
-                // If the popup is active, delegate key events to it
                 match key_event.code {
                     KeyCode::Esc => {
-                        self.mode = DomainScreenMode::Table; // Switch back to Table mode
-                        true // Event consumed by popup to close
+                        self.mode = DomainScreenMode::Table;
+                        true
                     }
                     KeyCode::Enter => {
                         let input_url = popup.get_input_text().join("\n");
-                        if !input_url.trim().is_empty() {
-                            let new_domain = MonitoredDomain {
-                                id: Uuid::new_v4(),
-                                url: input_url.trim().to_string(),
-                                status: None,
-                                http_code: None,
-                                interval: None,
-                                last_check: None,
-                                response_time: None,
-                            };
 
-                            self.domains.push(new_domain);
-                            if let Err(e) = Self::save_domains(&self.domains, "db/domains.json") {
-                                eprintln!("Error saving domains: {}", e);
-                            }
+                        if !is_valid_url(&input_url) {
+                            popup.set_title(Line::from(
+                                "Invalid URL! (e.g., http://example.com)".red(),
+                            ));
+                            return true;
                         }
-                        self.mode = DomainScreenMode::Table; // Switch back to Table mode
-                        true // Event consumed by popup to submit
+
+                        let new_domain = MonitoredDomain {
+                            id: Uuid::new_v4(),
+                            url: input_url.trim().to_string(),
+                            status: None,
+                            http_code: None,
+                            interval: None,
+
+                            last_check: None,
+                            response_time: None,
+                        };
+
+                        self.domains.push(new_domain);
+                        if let Err(e) = Self::save_domains(&self.domains, "db/domains.json") {
+                            eprintln!("Error saving domains: {}", e);
+                        }
+                        self.mode = DomainScreenMode::Table;
+                        true
                     }
                     _ => {
                         let tui_input = match key_event.code {
@@ -199,8 +231,8 @@ impl DomainScreen {
                         true
                     }
                     KeyCode::Char('D') | KeyCode::Char('d') => {
-                        // TODO: Implement delete logic
-                        true // Event consumed
+                        self.delete_entry();
+                        true
                     }
                     KeyCode::Char('R') | KeyCode::Char('r') => {
                         // TODO: Implement refresh logic
@@ -231,7 +263,7 @@ impl Widget for &mut DomainScreen {
             "D: Delete ".into(),
             "R: Refresh ".into(),
             "Q: Quit ".into(),
-            "Up/Down: Navigate ".into(),
+            "Up/Down | j/k: Navigate ".into(),
         ]);
         let header = Line::from("URL Monitoring").left_aligned();
 

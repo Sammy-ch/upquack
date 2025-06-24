@@ -27,7 +27,6 @@ impl<'a> StatefulWidget for DomainTable<'a> {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let header_cells = [
-            "ID",
             "URL",
             "Status",
             "Last Check",
@@ -56,7 +55,6 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                 };
 
                 // Handle Option<T> fields for display
-                let id_display = domain.id.to_string();
                 let url_display = domain.url.clone();
                 let status_display = match &domain.status {
                     Some(DomainStatus::UP) => "UP".green().bold(),
@@ -76,7 +74,6 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                 let interval_display = domain.interval.as_deref().unwrap_or("N/A").to_string();
 
                 let cells = vec![
-                    Cell::from(id_display),
                     Cell::from(url_display),
                     Cell::from(status_display),
                     Cell::from(last_check_display),
@@ -91,7 +88,6 @@ impl<'a> StatefulWidget for DomainTable<'a> {
         let table = Table::new(
             rows,
             [
-                Constraint::Length(38),     // For UUID
                 Constraint::Percentage(30), // For URL
                 Constraint::Length(10),     // For Status
                 Constraint::Length(18),     // For Last Check

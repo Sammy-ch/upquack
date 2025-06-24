@@ -70,6 +70,10 @@ impl<'a> Popup<'a> {
         &mut self.textarea
     }
 
+    pub fn set_title(&mut self, title: Line<'a>) {
+        self.title = title;
+    }
+
     pub fn get_input_text(&self) -> Vec<String> {
         self.textarea
             .lines()
