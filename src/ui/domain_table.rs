@@ -1,4 +1,5 @@
 use crate::ui::domains::{DomainStatus, HttpCode, MonitoredDomain};
+
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
