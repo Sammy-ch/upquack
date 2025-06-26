@@ -1,5 +1,3 @@
-pub mod actions;
-pub mod analytics;
+mod domain_table;
 pub mod domains;
 mod popup;
-mod domain_table;

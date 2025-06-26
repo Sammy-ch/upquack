@@ -4,6 +4,7 @@ use crate::ui::domain_table::{DomainTable, DomainTableState};
 
 use crate::ui::popup::Popup;
 use crate::utils::is_valid_url;
+use chrono::{DateTime, Utc};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::*;
 use ratatui::widgets::Clear;
@@ -23,11 +24,17 @@ static FILE_PATH: &str = "db/domains.json";
 pub struct MonitoredDomain {
     pub id: Uuid,
     pub url: String,
-    pub status: Option<DomainStatus>,
-    pub last_check: Option<String>,
-    pub response_time: Option<String>,
+    pub interval_seconds: u64,
+    pub check_history: Vec<CheckResult>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CheckResult {
+    pub timestamp: DateTime<Utc>,
+    pub status: DomainStatus,
     pub http_code: Option<HttpCode>,
-    pub interval: Option<String>,
+    pub response_time_ms: Option<u64>,
+    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,10 +45,14 @@ pub enum DomainStatus {
     Error(String),
 }
 
+#[repr(u16)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HttpCode {
-    OK,
-    ERR,
+    OK = 200,
+    ERR = 500,
+    Other(u16),
+    Timeout,
+    NetworkError,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -60,13 +71,8 @@ pub struct DomainScreen {
 
 impl DomainScreen {
     pub fn init() -> Self {
-        let domains = match Self::load_domains(FILE_PATH) {
-            Ok(loaded_domains) => loaded_domains,
-            Err(e) => {
-                eprintln!("Could not load domains: {}", e);
-                Vec::new()
-            }
-        };
+        let domains = Self::load_domains(FILE_PATH).unwrap_or_default();
+
         DomainScreen {
             state: DomainTableState::default(),
             mode: DomainScreenMode::Table,
@@ -159,12 +165,8 @@ impl DomainScreen {
                         let new_domain = MonitoredDomain {
                             id: Uuid::new_v4(),
                             url: input_url.trim().to_string(),
-                            status: None,
-                            http_code: None,
-                            interval: None,
-
-                            last_check: None,
-                            response_time: None,
+                            interval_seconds: 60,
+                            check_history: Vec::new(),
                         };
 
                         self.domains.push(new_domain);
@@ -269,7 +271,8 @@ impl Widget for &mut DomainScreen {
 
         let main_block = Block::bordered()
             .title_top(header)
-            .title_bottom(instructions.centered());
+            .title_bottom(instructions.centered())
+            .magenta();
 
         let inner_area = main_block.inner(area);
 

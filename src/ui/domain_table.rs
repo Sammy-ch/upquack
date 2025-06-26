@@ -1,11 +1,13 @@
 use crate::ui::domains::{DomainStatus, HttpCode, MonitoredDomain};
-
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
     style::{Color, Modifier, Style, Stylize},
+    text::Span,
     widgets::{Cell, Row, StatefulWidget, Table, TableState},
 };
+
+use chrono::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct DomainTableState {
@@ -55,24 +57,58 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                     Color::Reset
                 };
 
-                // Handle Option<T> fields for display
                 let url_display = domain.url.clone();
-                let status_display = match &domain.status {
-                    Some(DomainStatus::UP) => "UP".green().bold(),
-                    Some(DomainStatus::DOWN) => "DOWN".red().bold(),
-                    Some(DomainStatus::UNKNOWN) => "UNKNOWN".yellow().bold(),
-                    Some(DomainStatus::Error(e)) => format!("Error: {}", e).red(),
-                    None => "N/A".gray(),
-                };
-                let last_check_display = domain.last_check.as_deref().unwrap_or("N/A").to_string();
-                let response_time_display =
-                    domain.response_time.as_deref().unwrap_or("N/A").to_string();
-                let http_code_display = match &domain.http_code {
-                    Some(HttpCode::OK) => "200 OK".green(),
-                    Some(HttpCode::ERR) => "500 ERR".red(),
-                    None => "N/A".gray(),
-                };
-                let interval_display = domain.interval.as_deref().unwrap_or("N/A").to_string();
+                let interval_display = format!("{}s", domain.interval_seconds);
+
+                // --- Extract the latest check result ---
+                let (status_display, last_check_display, response_time_display, http_code_display) =
+                    if let Some(latest_check) = domain.check_history.last() {
+                        // Get the last element
+                        let status = match &latest_check.status {
+                            DomainStatus::UP => Span::styled("UP", Style::default().green().bold()),
+                            DomainStatus::DOWN => {
+                                Span::styled("DOWN", Style::default().red().bold())
+                            }
+                            DomainStatus::UNKNOWN => {
+                                Span::styled("UNKNOWN", Style::default().yellow().bold())
+                            }
+                            DomainStatus::Error(e) => {
+                                Span::styled(format!("Error: {}", e), Style::default().red())
+                            }
+                        };
+                        let last_check = latest_check
+                            .timestamp
+                            .with_timezone(&Local)
+                            .format("%Y-%m-%d %H:%M:%S")
+                            .to_string();
+                        let response_time = latest_check
+                            .response_time_ms
+                            .map(|ms| format!("{}ms", ms))
+                            .unwrap_or_else(|| "N/A".to_string());
+                        let http_code = match &latest_check.http_code {
+                            Some(HttpCode::OK) => Span::styled("200 OK", Style::default().green()),
+                            Some(HttpCode::ERR) => Span::styled("500 ERR", Style::default().red()),
+                            Some(HttpCode::Other(c)) => {
+                                Span::styled(format!("{}", c), Style::default().yellow())
+                            }
+                            Some(HttpCode::Timeout) => {
+                                Span::styled("Timeout", Style::default().red())
+                            }
+                            Some(HttpCode::NetworkError) => {
+                                Span::styled("Net Err", Style::default().red())
+                            }
+                            None => Span::styled("N/A", Style::default().gray()),
+                        };
+                        (status, last_check, response_time, http_code)
+                    } else {
+                        // If no check history yet
+                        (
+                            Span::styled("N/A", Style::default().gray()), // Status
+                            "N/A".to_string(),                            // Last Check
+                            "N/A".to_string(),                            // Response Time
+                            Span::styled("N/A", Style::default().gray()), // HTTP Code
+                        )
+                    };
 
                 let cells = vec![
                     Cell::from(url_display),

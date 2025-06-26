@@ -25,8 +25,6 @@ enum Menu {
     #[default]
     Main,
     Domains(DomainScreen),
-    AlertActions,
-    HistoricalData,
 }
 
 impl App {
@@ -48,10 +46,6 @@ impl App {
         match &mut self.current_screen {
             Menu::Main => frame.render_widget(self, frame.area()),
             Menu::Domains(domain_screen) => frame.render_widget(domain_screen, frame.area()),
-            Menu::AlertActions => frame.render_widget(Paragraph::new("AlertActions"), frame.area()),
-            Menu::HistoricalData => {
-                frame.render_widget(Paragraph::new("HistoricalData"), frame.area())
-            }
         }
     }
 
@@ -61,7 +55,6 @@ impl App {
                 let consumed = match &mut self.current_screen {
                     Menu::Main => self.handle_global_key_event(key_event),
                     Menu::Domains(domain_screen) => domain_screen.handle_key_event(key_event),
-                    _ => false,
                 };
 
                 if !consumed {
@@ -85,14 +78,6 @@ impl App {
             }
             KeyCode::Char('e') => {
                 self.current_screen = Menu::Domains(DomainScreen::init());
-                true
-            }
-            KeyCode::Char('m') => {
-                self.current_screen = Menu::AlertActions;
-                true
-            }
-            KeyCode::Char('p') => {
-                self.current_screen = Menu::HistoricalData;
                 true
             }
             _ => false,
@@ -135,13 +120,9 @@ impl Widget for &mut App {
 
         let text = Text::from(banner_lines);
 
-        let menu_options = Text::from(vec![
-            Line::from("Monitored URLS                 E"),
-            Line::from("Alert Actions                  M"),
-            Line::from("Historical Data                P"),
-        ])
-        .style(Color::LightBlue)
-        .centered();
+        let menu_options = Text::from(vec![Line::from("Monitored URLS                 E")])
+            .style(Color::LightBlue)
+            .centered();
 
         let header = Paragraph::new(text).centered();
 
