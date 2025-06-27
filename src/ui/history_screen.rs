@@ -10,24 +10,22 @@ use ratatui::{
     widgets::{Block, Cell, Row, StatefulWidget, Table, TableState, Widget},
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct HistoryTableState {
     pub table_state: TableState,
 }
 
-#[derive(Debug)]
-pub struct HistoryScreen<'a> {
+#[derive(Debug, Clone)]
+pub struct HistoryScreen {
     domain: MonitoredDomain,
     pub history_table_state: HistoryTableState,
-    _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> HistoryScreen<'a> {
+impl HistoryScreen {
     pub fn new(domain: MonitoredDomain) -> Self {
         let mut screen = Self {
             domain,
             history_table_state: HistoryTableState::default(),
-            _phantom: std::marker::PhantomData,
         };
         if !screen.domain.check_history.is_empty() {
             screen
@@ -73,7 +71,7 @@ impl<'a> HistoryScreen<'a> {
         match key_event.code {
             KeyCode::Esc => {
                 // This indicates that the screen should be exited and go back to the previous one
-                false // Return false to indicate event was not consumed by this screen (allowing App to switch)
+                true // Return false to indicate event was not consumed by this screen (allowing App to switch)
             }
             KeyCode::Up => {
                 self.navigate_history_table(key_event);
@@ -88,7 +86,7 @@ impl<'a> HistoryScreen<'a> {
     }
 }
 
-impl<'a> StatefulWidget for HistoryScreen<'a> {
+impl StatefulWidget for HistoryScreen {
     type State = HistoryTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -187,4 +185,3 @@ impl<'a> StatefulWidget for HistoryScreen<'a> {
         StatefulWidget::render(table, inner_area, buf, &mut state.table_state);
     }
 }
-

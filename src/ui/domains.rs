@@ -2,6 +2,7 @@ use std::{fs, io};
 
 use crate::ui::domain_table::{DomainTable, DomainTableState};
 
+use crate::ui::history_screen::{HistoryScreen, HistoryTableState};
 use crate::ui::popup::Popup;
 use crate::utils::is_valid_url;
 use chrono::{DateTime, Utc};
@@ -60,11 +61,13 @@ pub enum HttpCode {
 enum DomainScreenMode {
     Table,
     AddDomain(Popup<'static>),
+    DomainHistory(HistoryScreen),
 }
 
 #[derive(Debug)]
 pub struct DomainScreen {
-    pub state: DomainTableState,
+    pub domain_table_state: DomainTableState,
+    pub history_table_state: HistoryTableState,
     domains: Vec<MonitoredDomain>,
     mode: DomainScreenMode,
 }
@@ -74,7 +77,8 @@ impl DomainScreen {
         let domains = Self::load_domains(FILE_PATH).unwrap_or_default();
 
         DomainScreen {
-            state: DomainTableState::default(),
+            domain_table_state: DomainTableState::default(),
+            history_table_state: HistoryTableState::default(),
             mode: DomainScreenMode::Table,
             domains,
         }
@@ -94,17 +98,21 @@ impl DomainScreen {
     }
 
     fn delete_entry(&mut self) {
-        if let Some(selected_index) = self.state.table_state.selected() {
+        if let Some(selected_index) = self.domain_table_state.table_state.selected() {
             if selected_index < self.domains.len() {
                 let entry_id = self.domains[selected_index].id;
                 self.domains.retain(|domain| domain.id != entry_id);
 
                 if self.domains.is_empty() {
-                    self.state.table_state.select(None);
+                    self.domain_table_state.table_state.select(None);
                 } else if selected_index >= self.domains.len() {
-                    self.state.table_state.select(Some(self.domains.len() - 1))
+                    self.domain_table_state
+                        .table_state
+                        .select(Some(self.domains.len() - 1))
                 } else {
-                    self.state.table_state.select(Some(selected_index));
+                    self.domain_table_state
+                        .table_state
+                        .select(Some(selected_index));
                 }
 
                 if let Err(e) = Self::save_domains(&self.domains, FILE_PATH) {
@@ -115,7 +123,7 @@ impl DomainScreen {
     }
 
     fn next_row(&mut self) {
-        let i = match self.state.table_state.selected() {
+        let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
                 if i >= self.domains.len() - 1 {
                     0
@@ -126,11 +134,11 @@ impl DomainScreen {
             None => 0,
         };
 
-        self.state.table_state.select(Some(i));
+        self.domain_table_state.table_state.select(Some(i));
     }
 
     fn previous_row(&mut self) {
-        let i = match self.state.table_state.selected() {
+        let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
                 if i == 0 {
                     self.domains.len() - 1
@@ -141,7 +149,7 @@ impl DomainScreen {
             None => 0,
         };
 
-        self.state.table_state.select(Some(i));
+        self.domain_table_state.table_state.select(Some(i));
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
@@ -236,10 +244,15 @@ impl DomainScreen {
                         self.delete_entry();
                         true
                     }
-                    KeyCode::Char('R') | KeyCode::Char('r') => {
-                        // TODO: Implement refresh logic
-                        true // Event consumed
+                    KeyCode::Char('H') | KeyCode::Char('h') => {
+                        let selected_domain =
+                            self.domain_table_state.table_state.selected().unwrap();
+                        self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
+                            self.domains[selected_domain].clone(),
+                        ));
+                        true
                     }
+
                     KeyCode::Up | KeyCode::Char('k') => {
                         self.previous_row();
                         true
@@ -253,6 +266,10 @@ impl DomainScreen {
                     _ => false,            // Event not consumed by DomainScreen (in Table mode)
                 }
             }
+
+            DomainScreenMode::DomainHistory(history_mode) => {
+                history_mode.handle_key_event(key_event)
+            }
         }
     }
 }
@@ -260,12 +277,13 @@ impl DomainScreen {
 impl Widget for &mut DomainScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let instructions = Line::from(vec![
-            "Esc: Return to Menu ".into(),
-            "A: Add ".into(),
-            "D: Delete ".into(),
-            "R: Refresh ".into(),
-            "Q: Quit ".into(),
-            "Up/Down | j/k: Navigate ".into(),
+            " Esc: Return to Menu - ".into(),
+            "A: Add - ".into(),
+            "H: History - ".into(),
+            "D: Delete - ".into(),
+            "R: Refresh - ".into(),
+            "Q: Quit - ".into(),
+            "Up/Down: Navigation ".into(),
         ]);
         let header = Line::from("URL Monitoring").left_aligned();
 
@@ -280,12 +298,19 @@ impl Widget for &mut DomainScreen {
 
         main_block.render(area, buf);
 
-        domain_table_widget.render(inner_area, buf, &mut self.state);
+        domain_table_widget.render(inner_area, buf, &mut self.domain_table_state);
 
         if let DomainScreenMode::AddDomain(popup) = &self.mode {
             let popup_area = Popup::centered_rect(60, 20, area);
             Clear.render(popup_area, buf);
             popup.clone().render(popup_area, buf);
+        }
+
+        if let DomainScreenMode::DomainHistory(history_mode) = &self.mode {
+            Clear.render(area, buf);
+            history_mode
+                .clone()
+                .render(area, buf, &mut self.history_table_state)
         }
     }
 }
