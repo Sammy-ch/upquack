@@ -1,4 +1,5 @@
 mod app;
+mod monitor;
 mod ui;
 mod utils;
 

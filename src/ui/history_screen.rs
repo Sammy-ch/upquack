@@ -113,7 +113,7 @@ impl StatefulWidget for HistoryScreen {
         let header = Row::new(header_cells)
             .height(1)
             .bottom_margin(1)
-            .style(Style::default().bg(Color::Blue).fg(Color::White));
+            .style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
         let rows: Vec<Row> = self
             .domain

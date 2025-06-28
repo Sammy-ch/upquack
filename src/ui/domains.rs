@@ -245,11 +245,13 @@ impl DomainScreen {
                         true
                     }
                     KeyCode::Char('H') | KeyCode::Char('h') => {
-                        let selected_domain =
-                            self.domain_table_state.table_state.selected().unwrap();
-                        self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
-                            self.domains[selected_domain].clone(),
-                        ));
+                        if let Some(selected_domain) =
+                            self.domain_table_state.table_state.selected()
+                        {
+                            self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
+                                self.domains[selected_domain].clone(),
+                            ));
+                        }
                         true
                     }
 
