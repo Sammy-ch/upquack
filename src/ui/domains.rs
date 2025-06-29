@@ -15,6 +15,7 @@ use ratatui::{
     text::Line,
     widgets::{Block, Widget},
 };
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tui_textarea::{Input, Key};
 use uuid::Uuid;
@@ -26,11 +27,11 @@ pub struct MonitoredDomain {
     pub id: Uuid,
     pub url: String,
     pub interval_seconds: u64,
-    pub check_history: Vec<CheckResult>,
+    pub check_history: Vec<CheckStatus>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CheckResult {
+pub struct CheckStatus {
     pub timestamp: DateTime<Utc>,
     pub status: DomainStatus,
     pub http_code: Option<HttpCode>,
@@ -54,6 +55,16 @@ pub enum HttpCode {
     Other(u16),
     Timeout,
     NetworkError,
+}
+
+impl HttpCode {
+    pub fn from_status_code(code: StatusCode) -> Self {
+        match code {
+            StatusCode::OK => HttpCode::OK,
+            _ if code.is_server_error() => HttpCode::ERR,
+            _ => HttpCode::Other(code.as_u16()),
+        }
+    }
 }
 
 #[allow(clippy::large_enum_variant)]
