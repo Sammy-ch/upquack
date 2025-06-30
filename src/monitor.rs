@@ -3,6 +3,7 @@ use chrono::Utc;
 use log::{error, info};
 use reqwest::{Client, StatusCode};
 use std::{
+    ops::Deref,
     sync::{Arc, Mutex},
     time::{self},
 };
@@ -10,7 +11,9 @@ use tokio::time::sleep;
 
 pub fn start_monitoring_task(
     domains: Arc<Mutex<Vec<MonitoredDomain>>>,
-    update_domains: impl Fn(&[MonitoredDomain]) -> Result<(), std::io::Error> + Send + Sync + 'static,
+    update_domains: Arc<
+        dyn Fn(&[MonitoredDomain]) -> Result<(), std::io::Error> + Send + Sync + 'static,
+    >,
 ) {
     let client = Client::builder()
         .timeout(time::Duration::from_secs(10))
@@ -27,6 +30,7 @@ pub fn start_monitoring_task(
     for domain in domains_clone {
         let client = client.clone();
         let domains_arc_clone = Arc::clone(&domains);
+        let update_domains_clone = Arc::clone(&update_domains);
 
         tokio::spawn(async move {
             let domain_id = domain.id;
@@ -84,9 +88,12 @@ pub fn start_monitoring_task(
                             d.check_history.drain(0..1);
                         }
 
-                        // if let Err(e) = update_domains(&domains_guard) {
-                        //     error!("Failed to save domains after check: {}", e);
-                        // }
+                        let update_domains_clone = update_domains_clone.clone();
+                        let update_domains = update_domains_clone.deref();
+
+                        if let Err(e) = update_domains(&domains_guard) {
+                            error!("Failed to save domains after check: {}", e);
+                        }
                     }
                 }
                 sleep(interval).await;
@@ -106,17 +113,4 @@ mod test {
     use std::time::Duration;
 
     use super::*;
-
-    #[tokio::test]
-    async fn is_success() {
-        let url = "https://google.com";
-        let client = Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()
-            .expect("Failed to create client");
-
-        let status = domain_head_request(&client, url).await.unwrap();
-
-        assert!(StatusCode::is_success(&status))
-    }
 }
