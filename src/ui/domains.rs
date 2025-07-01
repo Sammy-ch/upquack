@@ -1,7 +1,12 @@
+use log::error;
+use std::sync::{Arc, Mutex};
+
 use std::{fs, io};
 
+use crate::monitor::start_monitoring_task;
 use crate::ui::domain_table::{DomainTable, DomainTableState};
 
+use crate::ui::domains;
 use crate::ui::history_screen::{HistoryScreen, HistoryTableState};
 use crate::ui::popup::Popup;
 use crate::utils::is_valid_url;
@@ -79,19 +84,40 @@ enum DomainScreenMode {
 pub struct DomainScreen {
     pub domain_table_state: DomainTableState,
     pub history_table_state: HistoryTableState,
-    domains: Vec<MonitoredDomain>,
+    domains: Arc<Mutex<Vec<MonitoredDomain>>>,
     mode: DomainScreenMode,
 }
 
 impl DomainScreen {
-    pub fn init() -> Self {
+    pub async fn init() -> Self {
         let domains = Self::load_domains(FILE_PATH).unwrap_or_default();
+        let domains_arc = Arc::new(Mutex::new(domains));
+
+        let update_domains_callback = {
+            let domains_arc_for_callback = Arc::clone(&domains_arc);
+            Arc::new(
+                move |updated_domain: &MonitoredDomain, check_history: &[CheckStatus]| {
+                    let mut domains_guard = domains_arc_for_callback.lock().unwrap();
+                    if let Some(d) = domains_guard.iter_mut().find(|d| d.id == updated_domain.id) {
+                        d.check_history = check_history.to_vec();
+
+                        if let Err(e) = Self::save_domains(&domains_guard, FILE_PATH) {
+                            error!("Failed to save domains after check: {}", e);
+                            return Err(e); // Propagate the error
+                        }
+                    }
+                    Ok(())
+                },
+            )
+        };
+
+        start_monitoring_task(Arc::clone(&domains_arc), update_domains_callback).await;
 
         DomainScreen {
             domain_table_state: DomainTableState::default(),
             history_table_state: HistoryTableState::default(),
             mode: DomainScreenMode::Table,
-            domains,
+            domains: domains_arc,
         }
     }
 
@@ -109,24 +135,26 @@ impl DomainScreen {
     }
 
     fn delete_entry(&mut self) {
-        if let Some(selected_index) = self.domain_table_state.table_state.selected() {
-            if selected_index < self.domains.len() {
-                let entry_id = self.domains[selected_index].id;
-                self.domains.retain(|domain| domain.id != entry_id);
+        let mut domain_guard = self.domains.lock().unwrap().clone();
 
-                if self.domains.is_empty() {
+        if let Some(selected_index) = self.domain_table_state.table_state.selected() {
+            if selected_index < domain_guard.len() {
+                let entry_id = domain_guard[selected_index].id;
+                domain_guard.retain(|domain| domain.id != entry_id);
+
+                if domain_guard.is_empty() {
                     self.domain_table_state.table_state.select(None);
-                } else if selected_index >= self.domains.len() {
+                } else if selected_index >= domain_guard.len() {
                     self.domain_table_state
                         .table_state
-                        .select(Some(self.domains.len() - 1))
+                        .select(Some(domain_guard.len() - 1))
                 } else {
                     self.domain_table_state
                         .table_state
                         .select(Some(selected_index));
                 }
 
-                if let Err(e) = Self::save_domains(&self.domains, FILE_PATH) {
+                if let Err(e) = Self::save_domains(&domain_guard, FILE_PATH) {
                     eprintln!("Error updating domains after deletion: {}", e);
                 }
             }
@@ -134,9 +162,11 @@ impl DomainScreen {
     }
 
     fn next_row(&mut self) {
+        let domain_guard = self.domains.lock().unwrap().clone();
+
         let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
-                if i >= self.domains.len() - 1 {
+                if i >= domain_guard.len() - 1 {
                     0
                 } else {
                     i + 1
@@ -149,10 +179,11 @@ impl DomainScreen {
     }
 
     fn previous_row(&mut self) {
+        let domain_guard = self.domains.lock().unwrap().clone();
         let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.domains.len() - 1
+                    domain_guard.len() - 1
                 } else {
                     i - 1
                 }
@@ -188,10 +219,14 @@ impl DomainScreen {
                             check_history: Vec::new(),
                         };
 
-                        self.domains.push(new_domain);
-                        if let Err(e) = Self::save_domains(&self.domains, "db/domains.json") {
-                            eprintln!("Error saving domains: {}", e);
+                        {
+                            let mut domain_guard = self.domains.lock().unwrap();
+                            domain_guard.push(new_domain);
+                            if let Err(e) = Self::save_domains(&domain_guard, "db/domains.json") {
+                                eprintln!("Error saving domains: {}", e);
+                            }
                         }
+
                         self.mode = DomainScreenMode::Table;
                         true
                     }
@@ -259,8 +294,10 @@ impl DomainScreen {
                         if let Some(selected_domain) =
                             self.domain_table_state.table_state.selected()
                         {
+                            let domains_guard = self.domains.lock().unwrap().clone();
+
                             self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
-                                self.domains[selected_domain].clone(),
+                                domains_guard[selected_domain].clone(),
                             ));
                         }
                         true
@@ -307,11 +344,13 @@ impl Widget for &mut DomainScreen {
 
         let inner_area = main_block.inner(area);
 
-        let domain_table_widget = DomainTable::new(&self.domains);
+        let domains_guard = self.domains.lock().unwrap().clone();
+        let domain_table_widget = DomainTable::new(&domains_guard);
 
         main_block.render(area, buf);
 
         domain_table_widget.render(inner_area, buf, &mut self.domain_table_state);
+        drop(domains_guard);
 
         if let DomainScreenMode::AddDomain(popup) = &self.mode {
             let popup_area = Popup::centered_rect(60, 20, area);

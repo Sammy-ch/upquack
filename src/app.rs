@@ -28,7 +28,8 @@ enum Menu {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
+        let domain_screen = DomainScreen::init().await;
         App {
             current_screen: Menu::Main,
             exit: false,

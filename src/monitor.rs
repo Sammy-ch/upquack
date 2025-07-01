@@ -9,14 +9,12 @@ use std::{
 };
 use tokio::time::sleep;
 
-pub fn start_monitoring_task(
+type DomainCallbackType =
+    dyn Fn(&MonitoredDomain, &[CheckStatus]) -> Result<(), std::io::Error> + Send + Sync + 'static;
+
+pub async fn start_monitoring_task(
     domains: Arc<Mutex<Vec<MonitoredDomain>>>,
-    update_domains_callback: Arc<
-        dyn Fn(&MonitoredDomain, &[CheckStatus]) -> Result<(), std::io::Error>
-            + Send
-            + Sync
-            + 'static,
-    >,
+    update_domains_callback: Arc<DomainCallbackType>,
 ) {
     let client = Client::builder()
         .timeout(time::Duration::from_secs(10))
@@ -170,7 +168,7 @@ mod tests {
         );
 
         // Start the monitoring task
-        start_monitoring_task(test_domains_arc.clone(), update_domains_closure);
+        start_monitoring_task(test_domains_arc.clone(), update_domains_closure).await;
 
         // Allow some time for monitoring to occur
         sleep(Duration::from_secs(3)).await;
@@ -202,4 +200,3 @@ mod tests {
         }
     }
 }
-
