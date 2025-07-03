@@ -6,7 +6,6 @@ use std::{fs, io};
 use crate::monitor::start_monitoring_task;
 use crate::ui::domain_table::{DomainTable, DomainTableState};
 
-use crate::ui::domains;
 use crate::ui::history_screen::{HistoryScreen, HistoryTableState};
 use crate::ui::popup::Popup;
 use crate::utils::is_valid_url;
@@ -46,17 +45,17 @@ pub struct CheckStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DomainStatus {
-    UP,
-    DOWN,
-    UNKNOWN,
+    Up,
+    Down,
+    Unknown,
     Error(String),
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HttpCode {
-    OK = 200,
-    ERR = 500,
+    Ok = 200,
+    Err = 500,
     Other(u16),
     Timeout,
     NetworkError,
@@ -65,8 +64,8 @@ pub enum HttpCode {
 impl HttpCode {
     pub fn from_status_code(code: StatusCode) -> Self {
         match code {
-            StatusCode::OK => HttpCode::OK,
-            _ if code.is_server_error() => HttpCode::ERR,
+            StatusCode::OK => HttpCode::Ok,
+            _ if code.is_server_error() => HttpCode::Err,
             _ => HttpCode::Other(code.as_u16()),
         }
     }
@@ -196,88 +195,84 @@ impl DomainScreen {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
         match &mut self.mode {
-            DomainScreenMode::AddDomain(popup) => {
-                match key_event.code {
-                    KeyCode::Esc => {
-                        self.mode = DomainScreenMode::Table;
-                        true
-                    }
-                    KeyCode::Enter => {
-                        let input_url = popup.get_input_text().join("\n");
-
-                        if !is_valid_url(&input_url) {
-                            popup.set_title(Line::from(
-                                "Invalid URL! (e.g., http://example.com)".red(),
-                            ));
-                            return true;
-                        }
-
-                        let new_domain = MonitoredDomain {
-                            id: Uuid::new_v4(),
-                            url: input_url.trim().to_string(),
-                            interval_seconds: 60,
-                            check_history: Vec::new(),
-                        };
-
-                        {
-                            let mut domain_guard = self.domains.lock().unwrap();
-                            domain_guard.push(new_domain);
-                            if let Err(e) = Self::save_domains(&domain_guard, "db/domains.json") {
-                                eprintln!("Error saving domains: {}", e);
-                            }
-                        }
-
-                        self.mode = DomainScreenMode::Table;
-                        true
-                    }
-                    _ => {
-                        let tui_input = match key_event.code {
-                            KeyCode::Char(c) => Input {
-                                key: Key::Char(c),
-                                ctrl: key_event.modifiers.contains(KeyModifiers::CONTROL),
-                                alt: key_event.modifiers.contains(KeyModifiers::ALT),
-                                shift: key_event.modifiers.contains(KeyModifiers::SHIFT),
-                            },
-                            KeyCode::Backspace => Input {
-                                key: Key::Backspace,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::Delete => Input {
-                                key: Key::Delete,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::Left => Input {
-                                key: Key::Left,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::Right => Input {
-                                key: Key::Right,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-                            KeyCode::Tab => Input {
-                                key: Key::Tab,
-                                ctrl: false,
-                                alt: false,
-                                shift: false,
-                            },
-
-                            _ => return false, // If tui-textarea doesn't support it, don't consume
-                        };
-                        popup.textarea_mut().input(tui_input);
-                        true // Event consumed by textarea
-                    }
+            DomainScreenMode::AddDomain(popup) => match key_event.code {
+                KeyCode::Esc => {
+                    self.mode = DomainScreenMode::Table;
+                    true
                 }
-            }
+                KeyCode::Enter => {
+                    let input_url = popup.get_input_text().join("\n");
+
+                    if !is_valid_url(&input_url) {
+                        popup
+                            .set_title(Line::from("Invalid URL! (e.g., http://example.com)".red()));
+                        return true;
+                    }
+
+                    let new_domain = MonitoredDomain {
+                        id: Uuid::new_v4(),
+                        url: input_url.trim().to_string(),
+                        interval_seconds: 60,
+                        check_history: Vec::new(),
+                    };
+
+                    {
+                        let mut domain_guard = self.domains.lock().unwrap();
+                        domain_guard.push(new_domain);
+                        if let Err(e) = Self::save_domains(&domain_guard, "db/domains.json") {
+                            eprintln!("Error saving domains: {}", e);
+                        }
+                    }
+
+                    self.mode = DomainScreenMode::Table;
+                    true
+                }
+                _ => {
+                    let tui_input = match key_event.code {
+                        KeyCode::Char(c) => Input {
+                            key: Key::Char(c),
+                            ctrl: key_event.modifiers.contains(KeyModifiers::CONTROL),
+                            alt: key_event.modifiers.contains(KeyModifiers::ALT),
+                            shift: key_event.modifiers.contains(KeyModifiers::SHIFT),
+                        },
+                        KeyCode::Backspace => Input {
+                            key: Key::Backspace,
+                            ctrl: false,
+                            alt: false,
+                            shift: false,
+                        },
+                        KeyCode::Delete => Input {
+                            key: Key::Delete,
+                            ctrl: false,
+                            alt: false,
+                            shift: false,
+                        },
+                        KeyCode::Left => Input {
+                            key: Key::Left,
+                            ctrl: false,
+                            alt: false,
+                            shift: false,
+                        },
+                        KeyCode::Right => Input {
+                            key: Key::Right,
+                            ctrl: false,
+                            alt: false,
+                            shift: false,
+                        },
+                        KeyCode::Tab => Input {
+                            key: Key::Tab,
+                            ctrl: false,
+                            alt: false,
+                            shift: false,
+                        },
+
+                        _ => return false,
+                    };
+                    popup.textarea_mut().input(tui_input);
+                    true
+                }
+            },
             DomainScreenMode::Table => {
-                // Handle keys for the main table view
                 match key_event.code {
                     KeyCode::Char('A') | KeyCode::Char('a') => {
                         self.mode = DomainScreenMode::AddDomain(Popup::new(
@@ -298,6 +293,7 @@ impl DomainScreen {
 
                             self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
                                 domains_guard[selected_domain].clone(),
+                                self.history_table_state.clone(),
                             ));
                         }
                         true
@@ -316,10 +312,22 @@ impl DomainScreen {
                     _ => false,            // Event not consumed by DomainScreen (in Table mode)
                 }
             }
+            DomainScreenMode::DomainHistory(history_mode) => match key_event.code {
+                KeyCode::Esc => {
+                    self.mode = DomainScreenMode::Table;
+                    true
+                }
+                KeyCode::Up | KeyCode::Char('k') => {
+                    history_mode.previous_row();
+                    true
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    history_mode.next_row();
+                    true
+                }
 
-            DomainScreenMode::DomainHistory(history_mode) => {
-                history_mode.handle_key_event(key_event)
-            }
+                _ => false,
+            },
         }
     }
 }

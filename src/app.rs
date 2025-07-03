@@ -66,8 +66,6 @@ impl App {
             if self.exit {
                 break;
             }
-
-            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
         }
         Ok(())
     }
@@ -176,4 +174,3 @@ impl Widget for &mut App {
         menu_options.render(box_layout[1], buf);
     }
 }
-

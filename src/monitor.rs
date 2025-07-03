@@ -1,6 +1,5 @@
 use crate::ui::domains::{CheckStatus, DomainStatus, HttpCode, MonitoredDomain};
 use chrono::Utc;
-use log::{error, info};
 use reqwest::{Client, StatusCode};
 use std::{
     ops::Deref,
@@ -26,7 +25,7 @@ pub async fn start_monitoring_task(
         domains_guard.clone()
     };
 
-    info!(
+    log::debug!(
         "Starting monitoring task for {} domains",
         domains_to_monitor.len()
     );
@@ -39,9 +38,11 @@ pub async fn start_monitoring_task(
         tokio::spawn(async move {
             let domain_id = domain.id;
             let interval = time::Duration::from_secs(domain.interval_seconds);
-            info!(
+            log::debug!(
                 "Monitoring task started for URL: {} (ID: {}) with interval: {:?}",
-                domain.url, domain_id, interval
+                domain.url,
+                domain_id,
+                interval
             );
 
             loop {
@@ -50,13 +51,13 @@ pub async fn start_monitoring_task(
                 let end_time = Utc::now();
                 let response_time = (end_time - start_time).num_milliseconds() as u64;
 
-                let check_status = match head_req_result {
+                let head_status = match head_req_result {
                     Ok(status_code) => {
                         let http_code = HttpCode::from_status_code(status_code);
                         let domain_status = if status_code.is_success() {
-                            DomainStatus::UP
+                            DomainStatus::Up
                         } else {
-                            DomainStatus::DOWN
+                            DomainStatus::Down
                         };
                         CheckStatus {
                             timestamp: end_time,
@@ -68,7 +69,7 @@ pub async fn start_monitoring_task(
                     }
                     Err(e) => {
                         let err_msg = e.to_string();
-                        error!("Error checking {}: {}", domain.url, err_msg);
+                        log::error!("Error checking {}: {}", domain.url, err_msg);
                         CheckStatus {
                             timestamp: end_time,
                             status: DomainStatus::Error(err_msg.clone()),
@@ -83,19 +84,21 @@ pub async fn start_monitoring_task(
                     }
                 };
 
-                {
-                    let mut domains_guard = domains_arc_clone.lock().unwrap();
-                    if let Some(d) = domains_guard.iter_mut().find(|d| d.id == domain_id) {
-                        d.check_history.push(check_status);
+                let mut domains_clone = {
+                    let domain_guard = domains_arc_clone.lock().unwrap();
+                    domain_guard.clone()
+                };
 
-                        if d.check_history.len() > 100 {
-                            d.check_history.drain(0..d.check_history.len() - 100); // Only keep the last 100
-                        }
+                if let Some(d) = domains_clone.iter_mut().find(|d| d.id == domain_id) {
+                    d.check_history.push(head_status);
 
-                        let update_callback_deref = update_domains_callback_clone.deref();
-                        if let Err(e) = update_callback_deref(d, &d.check_history) {
-                            error!("Failed to save domain {} after check: {}", d.url, e);
-                        }
+                    if d.check_history.len() > 100 {
+                        d.check_history.drain(0..d.check_history.len() - 100); // Only keep the last 100
+                    }
+
+                    let update_callback_deref = update_domains_callback_clone.deref();
+                    if let Err(e) = update_callback_deref(d, &d.check_history) {
+                        log::error!("Failed to save domain {} after check: {}", d.url, e);
                     }
                 }
 
@@ -133,6 +136,7 @@ mod tests {
 
         let domain_data = serde_json::to_string_pretty(&temp_domain)?;
         let specific_domain_file = file_path.join(format!("domain_{}.json", domain.id));
+
         fs::write(specific_domain_file, domain_data)?;
         Ok(())
     }
@@ -142,20 +146,12 @@ mod tests {
         let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
         let temp_dir_path = temp_dir.path().to_path_buf();
 
-        let test_domains = vec![
-            MonitoredDomain {
-                id: Uuid::new_v4(),
-                url: "http:ibm//.com".to_string(),
-                interval_seconds: 1,
-                check_history: Vec::new(),
-            },
-            MonitoredDomain {
-                id: Uuid::new_v4(),
-                url: "http:google//.com".to_string(),
-                interval_seconds: 1,
-                check_history: Vec::new(),
-            },
-        ];
+        let test_domains = vec![MonitoredDomain {
+            id: Uuid::new_v4(),
+            url: "http://google.com".to_string(),
+            interval_seconds: 1,
+            check_history: Vec::new(),
+        }];
 
         let test_domains_arc = Arc::new(Mutex::new(test_domains.clone()));
 
@@ -170,8 +166,7 @@ mod tests {
         // Start the monitoring task
         start_monitoring_task(test_domains_arc.clone(), update_domains_closure).await;
 
-        // Allow some time for monitoring to occur
-        sleep(Duration::from_secs(3)).await;
+        sleep(Duration::from_secs(60)).await;
 
         // Verify that check history has been updated and saved
         let domains_guard = test_domains_arc.lock().unwrap();

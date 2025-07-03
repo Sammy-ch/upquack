@@ -1,0 +1,16 @@
+2025-07-03 19:17:23 DEBUG upquack::monitor Starting monitoring task for 1 domains
+2025-07-03 19:17:23 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
+2025-07-03 19:17:23 DEBUG reqwest::connect starting new connection: https://google.com/
+2025-07-03 19:17:23 ERROR upquack::monitor Error checking https://google.com: error sending request
+2025-07-03 19:17:26 DEBUG upquack::ui::history_screen 0
+2025-07-03 19:17:27 DEBUG upquack::ui::history_screen 1
+2025-07-03 19:17:27 DEBUG upquack::ui::history_screen 2
+2025-07-03 19:17:27 DEBUG upquack::ui::history_screen 2
+2025-07-03 19:17:28 DEBUG upquack::ui::history_screen 1
+2025-07-03 19:17:28 DEBUG upquack::ui::history_screen 2
+2025-07-03 19:17:28 DEBUG upquack::ui::history_screen 3
+2025-07-03 19:17:28 DEBUG upquack::ui::history_screen 4
+2025-07-03 19:17:29 DEBUG upquack::ui::history_screen 5
+2025-07-03 19:17:30 DEBUG upquack::ui::history_screen 4
+2025-07-03 19:17:30 DEBUG upquack::ui::history_screen 5
+2025-07-03 19:17:30 DEBUG upquack::ui::history_screen 5

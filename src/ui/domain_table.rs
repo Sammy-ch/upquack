@@ -65,11 +65,11 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                     if let Some(latest_check) = domain.check_history.last() {
                         // Get the last element
                         let status = match &latest_check.status {
-                            DomainStatus::UP => Span::styled("UP", Style::default().green().bold()),
-                            DomainStatus::DOWN => {
+                            DomainStatus::Up => Span::styled("UP", Style::default().green().bold()),
+                            DomainStatus::Down => {
                                 Span::styled("DOWN", Style::default().red().bold())
                             }
-                            DomainStatus::UNKNOWN => {
+                            DomainStatus::Unknown => {
                                 Span::styled("UNKNOWN", Style::default().yellow().bold())
                             }
                             DomainStatus::Error(e) => {
@@ -86,8 +86,8 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                             .map(|ms| format!("{}ms", ms))
                             .unwrap_or_else(|| "N/A".to_string());
                         let http_code = match &latest_check.http_code {
-                            Some(HttpCode::OK) => Span::styled("200 OK", Style::default().green()),
-                            Some(HttpCode::ERR) => Span::styled("500 ERR", Style::default().red()),
+                            Some(HttpCode::Ok) => Span::styled("200 OK", Style::default().green()),
+                            Some(HttpCode::Err) => Span::styled("500 ERR", Style::default().red()),
                             Some(HttpCode::Other(c)) => {
                                 Span::styled(format!("{}", c), Style::default().yellow())
                             }
@@ -136,7 +136,7 @@ impl<'a> StatefulWidget for DomainTable<'a> {
         .column_spacing(2)
         .header(header)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-        .highlight_symbol(">> ");
+        .highlight_symbol("->");
 
         table.render(area, buf, &mut state.table_state);
     }

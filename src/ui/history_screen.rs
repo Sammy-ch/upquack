@@ -1,6 +1,5 @@
 use crate::ui::domains::{DomainStatus, HttpCode, MonitoredDomain};
 use chrono::prelude::*;
-use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
@@ -22,10 +21,10 @@ pub struct HistoryScreen {
 }
 
 impl HistoryScreen {
-    pub fn new(domain: MonitoredDomain) -> Self {
+    pub fn new(domain: MonitoredDomain, table_state: HistoryTableState) -> Self {
         let mut screen = Self {
             domain,
-            history_table_state: HistoryTableState::default(),
+            history_table_state: table_state,
         };
         if !screen.domain.check_history.is_empty() {
             screen
@@ -36,53 +35,35 @@ impl HistoryScreen {
         screen
     }
 
-    fn navigate_history_table(&mut self, key_event: KeyEvent) {
-        if self.domain.check_history.is_empty() {
-            self.history_table_state.table_state.select(None);
-            return;
-        }
-
+    pub fn next_row(&mut self) {
         let i = match self.history_table_state.table_state.selected() {
             Some(i) => {
-                match key_event.code {
-                    KeyCode::Down => {
-                        if i >= self.domain.check_history.len() - 1 {
-                            0 // Wrap around to the beginning
-                        } else {
-                            i + 1
-                        }
-                    }
-                    KeyCode::Up => {
-                        if i == 0 {
-                            self.domain.check_history.len() - 1 // Wrap around to the end
-                        } else {
-                            i - 1
-                        }
-                    }
-                    _ => i, // No horizontal navigation for history
+                if i >= self.domain.check_history.len() - 1 {
+                    0
+                } else {
+                    i + 1
                 }
             }
-            None => 0, // If nothing selected, select the first item
+            None => 0,
         };
+        log::debug!("{i:?}");
+
         self.history_table_state.table_state.select(Some(i));
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> bool {
-        match key_event.code {
-            KeyCode::Esc => {
-                // This indicates that the screen should be exited and go back to the previous one
-                true // Return false to indicate event was not consumed by this screen (allowing App to switch)
+    pub fn previous_row(&mut self) {
+        let i = match self.history_table_state.table_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.domain.check_history.len() - 1
+                } else {
+                    i - 1
+                }
             }
-            KeyCode::Up => {
-                self.navigate_history_table(key_event);
-                true // Event consumed
-            }
-            KeyCode::Down => {
-                self.navigate_history_table(key_event);
-                true // Event consumed
-            }
-            _ => false, // Event not consumed by this screen
-        }
+            None => 0,
+        };
+
+        self.history_table_state.table_state.select(Some(i));
     }
 }
 
@@ -133,16 +114,16 @@ impl StatefulWidget for HistoryScreen {
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string();
                 let status_display = match &check.status {
-                    DomainStatus::UP => Span::styled("UP", Style::default().green().bold()),
-                    DomainStatus::DOWN => Span::styled("DOWN", Style::default().red().bold()),
-                    DomainStatus::UNKNOWN => {
+                    DomainStatus::Up => Span::styled("UP", Style::default().green().bold()),
+                    DomainStatus::Down => Span::styled("DOWN", Style::default().red().bold()),
+                    DomainStatus::Unknown => {
                         Span::styled("UNKNOWN", Style::default().yellow().bold())
                     }
                     DomainStatus::Error(_) => Span::styled("ERROR", Style::default().red()),
                 };
                 let http_code_display = match &check.http_code {
-                    Some(HttpCode::OK) => Span::styled("200 OK", Style::default().green()),
-                    Some(HttpCode::ERR) => Span::styled("500 ERR", Style::default().red()),
+                    Some(HttpCode::Ok) => Span::styled("200 OK", Style::default().green()),
+                    Some(HttpCode::Err) => Span::styled("500 ERR", Style::default().red()),
                     Some(HttpCode::Other(c)) => {
                         Span::styled(format!("{}", c), Style::default().yellow())
                     }
@@ -179,9 +160,11 @@ impl StatefulWidget for HistoryScreen {
             ],
         )
         .header(header)
+        .column_spacing(2)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-        .highlight_symbol(">> ");
+        .highlight_symbol("-> ");
 
         StatefulWidget::render(table, inner_area, buf, &mut state.table_state);
     }
 }
+
