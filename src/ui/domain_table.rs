@@ -136,7 +136,7 @@ impl<'a> StatefulWidget for DomainTable<'a> {
         .column_spacing(2)
         .header(header)
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-        .highlight_symbol("->");
+        .highlight_symbol("-> ");
 
         table.render(area, buf, &mut state.table_state);
     }

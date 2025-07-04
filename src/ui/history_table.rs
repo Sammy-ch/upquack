@@ -15,30 +15,19 @@ pub struct HistoryTableState {
 }
 
 #[derive(Debug, Clone)]
-pub struct HistoryScreen {
+pub struct HistoryTable {
     domain: MonitoredDomain,
-    pub history_table_state: HistoryTableState,
 }
 
-impl HistoryScreen {
-    pub fn new(domain: MonitoredDomain, table_state: HistoryTableState) -> Self {
-        let mut screen = Self {
-            domain,
-            history_table_state: table_state,
-        };
-        if !screen.domain.check_history.is_empty() {
-            screen
-                .history_table_state
-                .table_state
-                .select(Some(screen.domain.check_history.len() - 1));
-        }
-        screen
+impl HistoryTable {
+    pub fn new(domain: MonitoredDomain) -> Self {
+        Self { domain }
     }
 
-    pub fn next_row(&mut self) {
-        let i = match self.history_table_state.table_state.selected() {
+    pub fn next_row(history_table_state: &mut HistoryTableState, check_history_len: usize) {
+        let i = match history_table_state.table_state.selected() {
             Some(i) => {
-                if i >= self.domain.check_history.len() - 1 {
+                if i >= check_history_len - 1 {
                     0
                 } else {
                     i + 1
@@ -48,14 +37,14 @@ impl HistoryScreen {
         };
         log::debug!("{i:?}");
 
-        self.history_table_state.table_state.select(Some(i));
+        history_table_state.table_state.select(Some(i));
     }
 
-    pub fn previous_row(&mut self) {
-        let i = match self.history_table_state.table_state.selected() {
+    pub fn previous_row(history_table_state: &mut HistoryTableState, check_history_len: usize) {
+        let i = match history_table_state.table_state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.domain.check_history.len() - 1
+                    check_history_len - 1
                 } else {
                     i - 1
                 }
@@ -63,11 +52,11 @@ impl HistoryScreen {
             None => 0,
         };
 
-        self.history_table_state.table_state.select(Some(i));
+        history_table_state.table_state.select(Some(i));
     }
 }
 
-impl StatefulWidget for HistoryScreen {
+impl StatefulWidget for HistoryTable {
     type State = HistoryTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -167,4 +156,3 @@ impl StatefulWidget for HistoryScreen {
         StatefulWidget::render(table, inner_area, buf, &mut state.table_state);
     }
 }
-

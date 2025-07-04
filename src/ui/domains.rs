@@ -6,7 +6,7 @@ use std::{fs, io};
 use crate::monitor::start_monitoring_task;
 use crate::ui::domain_table::{DomainTable, DomainTableState};
 
-use crate::ui::history_screen::{HistoryScreen, HistoryTableState};
+use crate::ui::history_table::{HistoryTable, HistoryTableState};
 use crate::ui::popup::Popup;
 use crate::utils::is_valid_url;
 use chrono::{DateTime, Utc};
@@ -74,9 +74,9 @@ impl HttpCode {
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum DomainScreenMode {
-    Table,
+    DomainTable,
     AddDomain(Popup<'static>),
-    DomainHistory(HistoryScreen),
+    HistoryTable,
 }
 
 #[derive(Debug)]
@@ -115,7 +115,7 @@ impl DomainScreen {
         DomainScreen {
             domain_table_state: DomainTableState::default(),
             history_table_state: HistoryTableState::default(),
-            mode: DomainScreenMode::Table,
+            mode: DomainScreenMode::DomainTable,
             domains: domains_arc,
         }
     }
@@ -197,7 +197,7 @@ impl DomainScreen {
         match &mut self.mode {
             DomainScreenMode::AddDomain(popup) => match key_event.code {
                 KeyCode::Esc => {
-                    self.mode = DomainScreenMode::Table;
+                    self.mode = DomainScreenMode::DomainTable;
                     true
                 }
                 KeyCode::Enter => {
@@ -224,7 +224,7 @@ impl DomainScreen {
                         }
                     }
 
-                    self.mode = DomainScreenMode::Table;
+                    self.mode = DomainScreenMode::DomainTable;
                     true
                 }
                 _ => {
@@ -272,7 +272,7 @@ impl DomainScreen {
                     true
                 }
             },
-            DomainScreenMode::Table => {
+            DomainScreenMode::DomainTable => {
                 match key_event.code {
                     KeyCode::Char('A') | KeyCode::Char('a') => {
                         self.mode = DomainScreenMode::AddDomain(Popup::new(
@@ -286,16 +286,7 @@ impl DomainScreen {
                         true
                     }
                     KeyCode::Char('H') | KeyCode::Char('h') => {
-                        if let Some(selected_domain) =
-                            self.domain_table_state.table_state.selected()
-                        {
-                            let domains_guard = self.domains.lock().unwrap().clone();
-
-                            self.mode = DomainScreenMode::DomainHistory(HistoryScreen::new(
-                                domains_guard[selected_domain].clone(),
-                                self.history_table_state.clone(),
-                            ));
-                        }
+                        self.mode = DomainScreenMode::HistoryTable;
                         true
                     }
 
@@ -312,22 +303,36 @@ impl DomainScreen {
                     _ => false,            // Event not consumed by DomainScreen (in Table mode)
                 }
             }
-            DomainScreenMode::DomainHistory(history_mode) => match key_event.code {
-                KeyCode::Esc => {
-                    self.mode = DomainScreenMode::Table;
-                    true
-                }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    history_mode.previous_row();
-                    true
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    history_mode.next_row();
-                    true
-                }
+            DomainScreenMode::HistoryTable => {
+                if let Some(selected_domain) = self.domain_table_state.table_state.selected() {
+                    let domains_guard = self.domains.lock().unwrap().clone();
+                    let domain_history = domains_guard[selected_domain].check_history.clone();
+                    match key_event.code {
+                        KeyCode::Esc => {
+                            self.mode = DomainScreenMode::DomainTable;
+                            true
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            HistoryTable::previous_row(
+                                &mut self.history_table_state,
+                                domain_history.len(),
+                            );
+                            true
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            HistoryTable::next_row(
+                                &mut self.history_table_state,
+                                domain_history.len(),
+                            );
+                            true
+                        }
 
-                _ => false,
-            },
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            }
         }
     }
 }
@@ -366,11 +371,15 @@ impl Widget for &mut DomainScreen {
             popup.clone().render(popup_area, buf);
         }
 
-        if let DomainScreenMode::DomainHistory(history_mode) = &self.mode {
+        if let DomainScreenMode::HistoryTable = &self.mode {
             Clear.render(area, buf);
-            history_mode
-                .clone()
-                .render(area, buf, &mut self.history_table_state)
+
+            let selected_domain_index = self.domain_table_state.table_state.selected().unwrap();
+            let domains = self.domains.lock().unwrap().clone();
+
+            let history_table_widget = HistoryTable::new(domains[selected_domain_index].clone());
+
+            history_table_widget.render(area, buf, &mut self.history_table_state);
         }
     }
 }
