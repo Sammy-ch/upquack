@@ -174,6 +174,41 @@
         "http_code": "NetworkError",
         "response_time_ms": null,
         "error_message": "error sending request"
+      },
+      {
+        "timestamp": "2025-07-05T14:50:53.910881151Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 2686,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:03:34.340602732Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 5894,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:04:35.121093504Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 773,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:05:35.893106002Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 767,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:06:06.831982771Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 1500,
+        "error_message": null
       }
     ]
   },
@@ -217,6 +252,41 @@
         "http_code": "NetworkError",
         "response_time_ms": null,
         "error_message": "error sending request"
+      },
+      {
+        "timestamp": "2025-07-05T14:50:54.042582471Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 2815,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:03:35.706343472Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 7259,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:04:36.847545032Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 1134,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:05:37.948382397Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 1092,
+        "error_message": null
+      },
+      {
+        "timestamp": "2025-07-05T15:06:07.045631008Z",
+        "status": "Up",
+        "http_code": "Ok",
+        "response_time_ms": 1713,
+        "error_message": null
       }
     ]
   }

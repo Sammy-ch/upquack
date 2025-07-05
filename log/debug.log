@@ -1,33 +1,83 @@
-2025-07-04 13:51:45 DEBUG upquack::monitor Starting monitoring task for 2 domains
-2025-07-04 13:51:45 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
-2025-07-04 13:51:45 DEBUG reqwest::connect starting new connection: https://google.com/
-2025-07-04 13:51:45 DEBUG upquack::monitor Monitoring task started for URL: https://ibm.com (ID: 6f8e6864-92ed-4b1e-bca1-c769f2cd7044) with interval: 60s
-2025-07-04 13:51:45 DEBUG reqwest::connect starting new connection: https://ibm.com/
-2025-07-04 13:51:45 ERROR upquack::monitor Error checking https://ibm.com: error sending request
-2025-07-04 13:51:45 ERROR upquack::monitor Error checking https://google.com: error sending request
-2025-07-04 13:51:51 DEBUG upquack::ui::history_table 0
-2025-07-04 13:51:51 DEBUG upquack::ui::history_table 1
-2025-07-04 13:51:51 DEBUG upquack::ui::history_table 2
-2025-07-04 13:51:52 DEBUG upquack::ui::history_table 3
-ogle.com/
-2025-07-04 13:49:17 ERROR upquack::monitor Error checking https://google.com: error sending request
-2025-07-04 13:49:17 ERROR upquack::monitor Error checking https://ibm.com: error sending request
-2025-07-04 13:49:20 DEBUG upquack::monitor Starting monitoring task for 2 domains
-2025-07-04 13:49:20 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
-2025-07-04 13:49:20 DEBUG upquack::monitor Monitoring task started for URL: https://ibm.com (ID: 6f8e6864-92ed-4b1e-bca1-c769f2cd7044) with interval: 60s
-2025-07-04 13:49:20 DEBUG reqwest::connect starting new connection: https://ibm.com/
-2025-07-04 13:49:20 ERROR upquack::monitor Error checking https://ibm.com: error sending request
-2025-07-04 13:49:20 DEBUG reqwest::connect starting new connection: https://google.com/
-2025-07-04 13:49:20 ERROR upquack::monitor Error checking https://google.com: error sending request
-2025-07-04 13:49:29 DEBUG upquack::monitor Starting monitoring task for 2 domains
-2025-07-04 13:49:29 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
-2025-07-04 13:49:29 DEBUG reqwest::connect starting new connection: https://google.com/
-2025-07-04 13:49:29 DEBUG upquack::monitor Monitoring task started for URL: https://ibm.com (ID: 6f8e6864-92ed-4b1e-bca1-c769f2cd7044) with interval: 60s
-2025-07-04 13:49:29 DEBUG reqwest::connect starting new connection: https://ibm.com/
-2025-07-04 13:49:29 ERROR upquack::monitor Error checking https://google.com: error sending request
-2025-07-04 13:49:29 ERROR upquack::monitor Error checking https://ibm.com: error sending request
-2025-07-04 13:49:33 DEBUG upquack::ui::history_table 17
-2025-07-04 13:49:33 DEBUG upquack::ui::history_table 0
-2025-07-04 13:49:34 DEBUG upquack::ui::history_table 1
-2025-07-04 13:49:39 DEBUG upquack::ui::history_table 3
-2025-07-04 13:49:39 DEBUG upquack::ui::history_table 4
+2025-07-05 17:03:28 DEBUG upquack::monitor Starting monitoring task for 2 domains
+2025-07-05 17:03:28 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
+2025-07-05 17:03:28 DEBUG upquack::monitor Monitoring task started for URL: https://ibm.com (ID: 6f8e6864-92ed-4b1e-bca1-c769f2cd7044) with interval: 60s
+2025-07-05 17:03:28 DEBUG reqwest::connect starting new connection: https://google.com/
+2025-07-05 17:03:28 DEBUG reqwest::connect starting new connection: https://ibm.com/
+2025-07-05 17:03:32 DEBUG reqwest::connect starting new connection: https://www.google.com/
+2025-07-05 17:03:32 DEBUG reqwest::connect starting new connection: https://www.ibm.com/
+2025-07-05 17:03:51 DEBUG upquack::ui::history_table 0
+2025-07-05 17:03:51 DEBUG upquack::ui::history_table 1
+2025-07-05 17:03:52 DEBUG upquack::ui::history_table 2
+2025-07-05 17:03:52 DEBUG upquack::ui::history_table 3
+2025-07-05 17:04:38 DEBUG upquack::ui::history_table 4
+2025-07-05 17:05:13 DEBUG upquack::ui::history_table 4
+2025-07-05 17:05:13 DEBUG upquack::ui::history_table 4
+2025-07-05 17:06:05 DEBUG upquack::monitor Starting monitoring task for 2 domains
+2025-07-05 17:06:05 DEBUG upquack::monitor Monitoring task started for URL: https://google.com (ID: 80613eed-ed13-4417-8ced-ef383a64a29f) with interval: 60s
+2025-07-05 17:06:05 DEBUG upquack::monitor Monitoring task started for URL: https://ibm.com (ID: 6f8e6864-92ed-4b1e-bca1-c769f2cd7044) with interval: 60s
+2025-07-05 17:06:05 DEBUG reqwest::connect starting new connection: https://ibm.com/
+2025-07-05 17:06:05 DEBUG reqwest::connect starting new connection: https://google.com/
+2025-07-05 17:06:05 DEBUG reqwest::connect starting new connection: https://www.ibm.com/
+2025-07-05 17:06:06 DEBUG reqwest::connect starting new connection: https://www.google.com/
+BUG upquack::ui::history_table 18
+2025-07-05 16:51:08 DEBUG upquack::ui::history_table 19
+2025-07-05 16:51:11 DEBUG upquack::ui::history_table 0
+2025-07-05 16:51:11 DEBUG upquack::ui::history_table 0
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 1
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 2
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 3
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 4
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 5
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 6
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 7
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 8
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 9
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 10
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 11
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 12
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 13
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 14
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 15
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 16
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 17
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 18
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 19
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 0
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 1
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 2
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 3
+2025-07-05 16:51:12 DEBUG upquack::ui::history_table 4
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 5
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 6
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 7
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 8
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 9
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 10
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 11
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 12
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 13
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 14
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 15
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 16
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 17
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 18
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 19
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 0
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 1
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 2
+2025-07-05 16:51:13 DEBUG upquack::ui::history_table 3
+2025-07-05 16:51:16 DEBUG upquack::ui::history_table 4
+2025-07-05 16:51:16 DEBUG upquack::ui::history_table 5
+2025-07-05 16:51:17 DEBUG upquack::ui::history_table 6
+2025-07-05 16:51:17 DEBUG upquack::ui::history_table 7
+2025-07-05 16:51:17 DEBUG upquack::ui::history_table 8
+2025-07-05 16:51:17 DEBUG upquack::ui::history_table 9
+2025-07-05 16:51:18 DEBUG upquack::ui::history_table 8
+2025-07-05 16:51:21 DEBUG upquack::ui::history_table 7
+2025-07-05 16:51:28 DEBUG upquack::ui::history_table 1
+2025-07-05 16:51:29 DEBUG upquack::ui::history_table 2
+2025-07-05 16:51:29 DEBUG upquack::ui::history_table 3
+2025-07-05 16:51:30 DEBUG upquack::ui::history_table 4
+2025-07-05 16:51:30 DEBUG upquack::ui::history_table 5
+2025-07-05 16:51:31 DEBUG upquack::ui::history_table 6
+2025-07-05 16:51:31 DEBUG upquack::ui::history_table 6
