@@ -5,6 +5,8 @@ UpQuack: A Terminal URL Monitoring Application
 
 
 UpQuack is a minimalist, real-time URL monitoring application built with Rust. It provides a clean and interactive Terminal User Interface (TUI) to keep track of your essential websites' uptime and response times. Whether you're a developer, a sysadmin, or just someone who wants to ensure their favorite sites are up, UpQuack offers a simple yet powerful solution.
+
+
 ✨ Features
 
     Real-time Monitoring: Continuously sends HEAD requests to specified URLs at defined intervals.
@@ -19,11 +21,9 @@ UpQuack is a minimalist, real-time URL monitoring application built with Rust. I
 
     Persistence: All monitored domains and their check histories are automatically saved to a local JSON file (db/domains.json) and loaded on startup.
 
-    Responsive TUI: Built with ratatui and crossterm for a smooth and interactive terminal experience.
-
-    Asynchronous Operations: Leverages tokio for efficient, non-blocking network requests, ensuring the UI remains responsive while monitoring runs in the background.
 
 🚀 Getting Started
+
 Prerequisites
 
 Before you begin, ensure you have the following installed:
