@@ -102,7 +102,7 @@ impl DomainScreen {
 
                         if let Err(e) = Self::save_domains(&domains_guard, FILE_PATH) {
                             error!("Failed to save domains after check: {}", e);
-                            return Err(e); // Propagate the error
+                            return Err(e);
                         }
                     }
                     Ok(())
@@ -134,7 +134,7 @@ impl DomainScreen {
     }
 
     fn delete_entry(&mut self) {
-        let mut domain_guard = self.domains.lock().unwrap().clone();
+        let mut domain_guard = self.domains.lock().unwrap();
 
         if let Some(selected_index) = self.domain_table_state.table_state.selected() {
             if selected_index < domain_guard.len() {
@@ -161,7 +161,7 @@ impl DomainScreen {
     }
 
     fn next_row(&mut self) {
-        let domain_guard = self.domains.lock().unwrap().clone();
+        let domain_guard = self.domains.lock().unwrap();
 
         let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
@@ -178,7 +178,7 @@ impl DomainScreen {
     }
 
     fn previous_row(&mut self) {
-        let domain_guard = self.domains.lock().unwrap().clone();
+        let domain_guard = self.domains.lock().unwrap();
         let i = match self.domain_table_state.table_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -299,14 +299,15 @@ impl DomainScreen {
                         true
                     }
                     // return false so the parent `App` can potentially handle it.
-                    KeyCode::Esc => false, // Let App handle global Esc
-                    _ => false,            // Event not consumed by DomainScreen (in Table mode)
+                    KeyCode::Esc => false,
+                    _ => false, // Event not consumed by DomainScreen (in Table mode)
                 }
             }
             DomainScreenMode::HistoryTable => {
                 if let Some(selected_domain) = self.domain_table_state.table_state.selected() {
-                    let domains_guard = self.domains.lock().unwrap().clone();
-                    let domain_history = domains_guard[selected_domain].check_history.clone();
+                    let domains_guard = self.domains.lock().unwrap();
+                    let domain_history = &domains_guard[selected_domain].check_history;
+
                     match key_event.code {
                         KeyCode::Esc => {
                             self.mode = DomainScreenMode::DomainTable;
@@ -357,7 +358,7 @@ impl Widget for &mut DomainScreen {
 
         let inner_area = main_block.inner(area);
 
-        let domains_guard = self.domains.lock().unwrap().clone();
+        let domains_guard = self.domains.lock().unwrap();
         let domain_table_widget = DomainTable::new(&domains_guard);
 
         main_block.render(area, buf);
@@ -375,9 +376,9 @@ impl Widget for &mut DomainScreen {
             Clear.render(area, buf);
 
             let selected_domain_index = self.domain_table_state.table_state.selected().unwrap();
-            let domains = self.domains.lock().unwrap().clone();
+            let domains = self.domains.lock().unwrap();
 
-            let history_table_widget = HistoryTable::new(domains[selected_domain_index].clone());
+            let history_table_widget = HistoryTable::new(&domains[selected_domain_index]);
 
             history_table_widget.render(area, buf, &mut self.history_table_state);
         }

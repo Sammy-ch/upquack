@@ -6,40 +6,13 @@ use ratatui::{
 };
 use tui_textarea::TextArea;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Popup<'a> {
     title: Line<'a>,
     textarea: TextArea<'a>,
     border_style: Style,
     style: Style,
     title_style: Style,
-}
-
-impl<'a> Clone for Popup<'a> {
-    fn clone(&self) -> Self {
-        let title_clone = self.title.clone();
-        let border_style_clone = self.border_style;
-        let style_clone = self.style;
-        let title_style_clone = self.title_style;
-
-        //Create a *new* instance and copy its content.
-        let mut cloned_textarea = TextArea::default();
-        cloned_textarea.insert_str(self.textarea.lines().join("\n")); // Copy all lines
-
-        // Also, copy the block configuration from the original textarea to the new one
-        if let Some(block) = self.textarea.block() {
-            // This re-applies the border, title, and style to the cloned textarea
-            cloned_textarea.set_block(block.clone());
-        }
-
-        Self {
-            title: title_clone,
-            textarea: cloned_textarea,
-            border_style: border_style_clone,
-            style: style_clone,
-            title_style: title_style_clone,
-        }
-    }
 }
 
 impl<'a> Popup<'a> {

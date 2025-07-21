@@ -101,7 +101,6 @@ impl<'a> StatefulWidget for DomainTable<'a> {
                         };
                         (status, last_check, response_time, http_code)
                     } else {
-                        // If no check history yet
                         (
                             Span::styled("N/A", Style::default().gray()), // Status
                             "N/A".to_string(),                            // Last Check

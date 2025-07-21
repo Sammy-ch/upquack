@@ -15,12 +15,12 @@ pub struct HistoryTableState {
 }
 
 #[derive(Debug, Clone)]
-pub struct HistoryTable {
-    domain: MonitoredDomain,
+pub struct HistoryTable<'a> {
+    domain: &'a MonitoredDomain,
 }
 
-impl HistoryTable {
-    pub fn new(domain: MonitoredDomain) -> Self {
+impl<'a> HistoryTable<'a> {
+    pub fn new(domain: &'a MonitoredDomain) -> Self {
         Self { domain }
     }
 
@@ -56,7 +56,7 @@ impl HistoryTable {
     }
 }
 
-impl StatefulWidget for HistoryTable {
+impl<'a> StatefulWidget for HistoryTable<'a> {
     type State = HistoryTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -89,6 +89,7 @@ impl StatefulWidget for HistoryTable {
             .domain
             .check_history
             .iter()
+            .rev()
             .enumerate()
             .map(|(i, check)| {
                 let row_color = if i % 2 == 0 {
